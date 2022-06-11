@@ -67,7 +67,7 @@ func getBoolChild(root tree.FunctionNode) tree.BooleanNode {
 	return getRandom(children)
 }
 
-func Crossover(parent1, parent2 tree.FloatFunctionNode) (tree.FunctionNode, tree.FunctionNode) {
+func Crossover(parent1, parent2 tree.FunctionNode) (tree.FunctionNode, tree.FunctionNode) {
 	node1 := parent1.Clone().(tree.FunctionNode)
 	node2 := parent2.Clone().(tree.FunctionNode)
 
@@ -98,12 +98,29 @@ func fCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.Fl
 		return
 	}
 
+	replaced := false
+	visited := make(map[tree.Node]bool)
+
 	node1.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc {
-			f.ReplaceF(point1, point2)
+		if visited[n] {
+			panic("LOOP DETECTED!")
+		}
+		//visited[n] = true
+		//if depth > 1000 {
+		//	tree.Print(node1)
+		//	panic("Something went wrong and we are too deep")
+		//}
+		if f, isFunc := n.(tree.FunctionNode); !replaced && isFunc {
+			replaced = f.ReplaceF(point1, point2)
 		}
 	})
 
+	replaced = false
+	node2.Dfs(func(depth int, n tree.Node) {
+		if f, isFunc := n.(tree.FunctionNode); !replaced && isFunc {
+			replaced = f.ReplaceF(point2, point1)
+		}
+	})
 }
 
 func bCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.BooleanNode) {

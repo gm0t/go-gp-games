@@ -23,8 +23,8 @@ type Math struct {
 	right tree.FloatNode
 }
 
-func (n *Math) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) {
-	// noop
+func (n *Math) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
+	return false
 }
 
 func (n *Math) Clone() tree.Node {
@@ -35,16 +35,19 @@ func (n *Math) Clone() tree.Node {
 	)
 }
 
-func (n *Math) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) {
+func (n *Math) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
 	if n.left == cNode {
 		n.left = nNode
+		return true
 	} else if n.right == cNode {
 		n.right = nNode
+		return true
 	}
+	return false
 }
 
-func (n *Math) ReplaceB(tree.BooleanNode, tree.BooleanNode) {
-	// noop
+func (n *Math) ReplaceB(tree.BooleanNode, tree.BooleanNode) bool {
+	return false
 }
 
 func (n *Math) String() string {

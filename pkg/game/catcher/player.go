@@ -11,15 +11,11 @@ type Player interface {
 	GetAction(state *State) actions.Action
 }
 
-type AiPlayer struct {
+type AiFPlayer struct {
 	strategy tree.FloatNode
 }
 
-func NewAiPlayer(strategy tree.FloatNode) *AiPlayer {
-	return &AiPlayer{strategy: strategy}
-}
-
-func (ai *AiPlayer) GetAction(state *State) actions.Action {
+func (ai *AiFPlayer) GetAction(state *State) actions.Action {
 	allActions := []actions.Action{actions.Down, actions.Up, actions.Left, actions.Right}
 
 	strategy := ai.strategy
@@ -37,4 +33,22 @@ func (ai *AiPlayer) GetAction(state *State) actions.Action {
 	}
 
 	return bestAction
+}
+
+func NewAiFPlayer(strategy tree.FloatNode) *AiFPlayer {
+	return &AiFPlayer{strategy: strategy}
+}
+
+type AiAPlayer struct {
+	strategy tree.ActionNode
+}
+
+func (ai *AiAPlayer) GetAction(state *State) actions.Action {
+	action := ai.strategy.Resolve(state.BuildArgs())
+
+	return action.(actions.Action)
+}
+
+func NewAiAPlayer(strategy tree.ActionNode) *AiAPlayer {
+	return &AiAPlayer{strategy: strategy}
 }

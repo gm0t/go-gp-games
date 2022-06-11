@@ -41,7 +41,7 @@ func createFitness() evolution.Fitness {
 		return catcher.NewState(playerX, playerY, goalX, goalY)
 	}
 
-	return func(agent tree.FloatFunctionNode, generation int) float64 {
+	return func(agent tree.FunctionNode, generation int) float64 {
 		if lastGen != generation {
 			lastGen = generation
 			if solved > 5 {
@@ -66,8 +66,20 @@ func createFitness() evolution.Fitness {
 	}
 }
 
-func simulateGame(agent tree.FloatFunctionNode, state *catcher.State) catcher.Result {
-	//fmt.Println(">>>>>>", state)
-	game := catcher.NewGame(state, catcher.NewAiPlayer(agent))
+func simulateGame(agent tree.FunctionNode, state *catcher.State) catcher.Result {
+
+	game := catcher.NewGame(state, buildPlayer(agent))
 	return game.Run(200)
+}
+
+func buildPlayer(agent tree.FunctionNode) catcher.Player {
+	if fAgent, isFloat := agent.(tree.FloatFunctionNode); isFloat {
+		return catcher.NewAiFPlayer(fAgent)
+	}
+
+	if aAgent, isAction := agent.(tree.ActionFunctionNode); isAction {
+		return catcher.NewAiAPlayer(aAgent)
+	}
+
+	panic("Unknown type of agent!")
 }

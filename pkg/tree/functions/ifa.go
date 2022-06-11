@@ -20,22 +20,27 @@ func (i *IfA) Clone() tree.Node {
 	)
 }
 
-func (i *IfA) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) {
-	// noop here because there is nothing to replace
+func (i *IfA) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
+	return false
 }
 
-func (i *IfA) ReplaceB(cNode tree.BooleanNode, nNode tree.BooleanNode) {
+func (i *IfA) ReplaceB(cNode tree.BooleanNode, nNode tree.BooleanNode) bool {
 	if i.condition == cNode {
 		i.condition = nNode
+		return true
 	}
+	return false
 }
 
-func (i *IfA) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) {
+func (i *IfA) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
 	if i.success == cNode {
 		i.success = nNode
+		return true
 	} else if i.fail == cNode {
 		i.fail = nNode
+		return true
 	}
+	return false
 }
 
 func (i *IfA) String() string {

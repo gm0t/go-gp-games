@@ -22,20 +22,23 @@ type Comparison struct {
 	right tree.FloatNode
 }
 
-func (n *Comparison) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) {
-	// noop
+func (n *Comparison) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
+	return false
 }
 
-func (n *Comparison) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) {
+func (n *Comparison) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
 	if n.left == cNode {
 		n.left = nNode
+		return true
 	} else if n.right == cNode {
 		n.right = nNode
+		return true
 	}
+	return false
 }
 
-func (n *Comparison) ReplaceB(tree.BooleanNode, tree.BooleanNode) {
-	// noop
+func (n *Comparison) ReplaceB(tree.BooleanNode, tree.BooleanNode) bool {
+	return false
 }
 
 func (n *Comparison) Clone() tree.Node {

@@ -8,11 +8,11 @@ import (
 )
 
 type Gene struct {
-	agent   tree.FloatFunctionNode
+	agent   tree.FunctionNode
 	fitness float64
 }
 
-type Fitness func(node tree.FloatFunctionNode, generation int) float64
+type Fitness func(node tree.FunctionNode, generation int) float64
 
 type Options struct {
 	MaxGenerations int
