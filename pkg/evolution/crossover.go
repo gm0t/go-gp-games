@@ -105,13 +105,16 @@ func fCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.Fl
 		if visited[n] {
 			panic("LOOP DETECTED!")
 		}
-		//visited[n] = true
+		visited[n] = true
 		//if depth > 1000 {
 		//	tree.Print(node1)
 		//	panic("Something went wrong and we are too deep")
 		//}
 		if f, isFunc := n.(tree.FunctionNode); !replaced && isFunc {
 			replaced = f.ReplaceF(point1, point2)
+			if replaced {
+				fmt.Println("Replacing ", point1, "for", point2, "at", depth, "for", n)
+			}
 		}
 	})
 
@@ -134,6 +137,11 @@ func bCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.Bo
 			f.ReplaceB(point1, point2)
 		}
 	})
+	node2.Dfs(func(depth int, n tree.Node) {
+		if f, isFunc := n.(tree.FunctionNode); isFunc {
+			f.ReplaceB(point2, point1)
+		}
+	})
 }
 
 func aCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.ActionNode) {
@@ -145,6 +153,11 @@ func aCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.Ac
 	node1.Dfs(func(depth int, n tree.Node) {
 		if f, isFunc := n.(tree.FunctionNode); isFunc {
 			f.ReplaceA(point1, point2)
+		}
+	})
+	node2.Dfs(func(depth int, n tree.Node) {
+		if f, isFunc := n.(tree.FunctionNode); isFunc {
+			f.ReplaceA(point2, point1)
 		}
 	})
 }
