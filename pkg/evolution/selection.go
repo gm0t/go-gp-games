@@ -46,7 +46,7 @@ func (s *RouletteSelector) Select(size int) []*Gene {
 	for i := 0; i < size; i += 1 {
 		chosen := s.Pick()
 		selection[i] = &Gene{
-			agent:   chosen.agent.Clone().(tree.FloatFunctionNode),
+			agent:   chosen.agent.Clone().(tree.FunctionNode),
 			fitness: chosen.fitness,
 		}
 	}

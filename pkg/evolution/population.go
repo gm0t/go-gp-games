@@ -135,7 +135,7 @@ func NewPopulation(
 ) *Population {
 	initialGenes := make([]*Gene, 0)
 	for i := 0; i < size; i += 1 {
-		agent := generator.FTree(2)
+		agent := generator.ATree(2)
 		initialGenes = append(initialGenes, &Gene{
 			agent:   agent,
 			fitness: 0,

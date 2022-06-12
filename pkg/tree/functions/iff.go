@@ -56,7 +56,7 @@ func (i *IfF) ReplaceB(cNode tree.BooleanNode, nNode tree.BooleanNode) bool {
 }
 
 func (i *IfF) String() string {
-	return "if(" + i.condition.String() + ") { " + i.success.String() + "} else {" + i.fail.String() + "})"
+	return "if(" + i.condition.String() + ") {" + i.success.String() + "} else {" + i.fail.String() + "}"
 }
 
 func (i *IfF) Dfs(cb func(depth int, n tree.Node), extra ...int) {

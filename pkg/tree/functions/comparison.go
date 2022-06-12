@@ -59,7 +59,7 @@ func (n *Comparison) Clone() tree.Node {
 }
 
 func (n *Comparison) String() string {
-	return "(" + n.left.String() + string(n.op) + n.right.String() + ")"
+	return n.left.String() + string(n.op) + n.right.String()
 }
 
 func (n *Comparison) Dfs(cb func(depth int, n tree.Node), extra ...int) {
