@@ -51,7 +51,7 @@ func (n *Math) ReplaceB(tree.BooleanNode, tree.BooleanNode) bool {
 }
 
 func (n *Math) String() string {
-	return string(n.op)
+	return "(" + n.left.String() + string(n.op) + n.right.String() + ")"
 }
 
 func (n *Math) Dfs(cb func(depth int, n tree.Node), extra ...int) {

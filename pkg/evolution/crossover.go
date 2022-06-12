@@ -68,96 +68,72 @@ func getBoolChild(root tree.FunctionNode) tree.BooleanNode {
 }
 
 func Crossover(parent1, parent2 tree.FunctionNode) (tree.FunctionNode, tree.FunctionNode) {
+	if parent1 == parent2 {
+		// there is no point in crossover with itself
+		return nil, nil
+	}
+
 	node1 := parent1.Clone().(tree.FunctionNode)
 	node2 := parent2.Clone().(tree.FunctionNode)
 
-	child1 := getAnyChild(node1)
-	if child1 == nil {
+	point1 := getAnyChild(node1)
+	if point1 == nil {
 		fmt.Println("Failed to find a good point for crossover in parent 1")
 		return nil, nil
 	}
 
-	if fNode, isFloat := child1.(tree.FloatNode); isFloat {
-		fCrossover(node1, node2, fNode)
+	var point2 tree.Node
+	if _, isFloat := point1.(tree.FloatNode); isFloat {
+		point2 = getFloatChild(node2)
+	} else if _, isBool := point1.(tree.BooleanNode); isBool {
+		point2 = getBoolChild(node2)
+	} else if _, isAction := point1.(tree.ActionNode); isAction {
+		point2 = getActionChild(node2)
+	}
+	if point2 == nil {
+		fmt.Println("Failed to find a good point for crossover in parent 2")
+		return nil, nil
 	}
 
-	if bNode, isBool := child1.(tree.BooleanNode); isBool {
-		bCrossover(node1, node2, bNode)
-	}
-
-	if aNode, isAction := child1.(tree.ActionNode); isAction {
-		aCrossover(node1, node2, aNode)
-	}
+	replace(node1, point1, point2.Clone())
+	replace(node2, point2, point1.Clone())
 
 	return node1, node2
 }
 
-func fCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.FloatNode) {
-	point2 := getFloatChild(node2)
-	if point2 == nil {
-		return
-	}
+//
+//func findEqNodes(parent1 tree.FunctionNode, parent2 tree.FunctionNode) {
+//	visited := make(map[tree.Node]bool)
+//	parent1.Dfs(func(depth int, n tree.Node) {
+//		visited[n] = true
+//	})
+//
+//	parent2.Dfs(func(depth int, n tree.Node) {
+//		if visited[n] {
+//			fmt.Println("+++++++++++++++++++++++++++++")
+//			fmt.Println(parent1)
+//			fmt.Println(parent2)
+//			fmt.Println("Matching node at level ", depth, "\n", n)
+//			fmt.Println("+++++++++++++++++++++++++++++")
+//			panic("wttf is this")
+//		}
+//	})
+//}
 
+func replace(root tree.FunctionNode, cNode tree.Node, nNode tree.Node) {
 	replaced := false
-	visited := make(map[tree.Node]bool)
-
-	node1.Dfs(func(depth int, n tree.Node) {
-		if visited[n] {
-			panic("LOOP DETECTED!")
-		}
-		visited[n] = true
-		//if depth > 1000 {
-		//	tree.Print(node1)
-		//	panic("Something went wrong and we are too deep")
-		//}
+	root.Dfs(func(depth int, n tree.Node) {
 		if f, isFunc := n.(tree.FunctionNode); !replaced && isFunc {
-			replaced = f.ReplaceF(point1, point2)
-			if replaced {
-				fmt.Println("Replacing ", point1, "for", point2, "at", depth, "for", n)
+			if fNode, isFloat := cNode.(tree.FloatNode); isFloat {
+				replaced = f.ReplaceF(fNode, nNode.(tree.FloatNode))
+			} else if aNode, isAction := cNode.(tree.ActionNode); isAction {
+				replaced = f.ReplaceA(aNode, nNode.(tree.ActionNode))
+			} else if bNode, isBoolean := cNode.(tree.BooleanNode); isBoolean {
+				replaced = f.ReplaceB(bNode, nNode.(tree.BooleanNode))
 			}
-		}
-	})
-
-	replaced = false
-	node2.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); !replaced && isFunc {
-			replaced = f.ReplaceF(point2, point1)
-		}
-	})
-}
-
-func bCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.BooleanNode) {
-	point2 := getBoolChild(node2)
-	if point2 == nil {
-		return
-	}
-
-	node1.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc {
-			f.ReplaceB(point1, point2)
-		}
-	})
-	node2.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc {
-			f.ReplaceB(point2, point1)
-		}
-	})
-}
-
-func aCrossover(node1 tree.FunctionNode, node2 tree.FunctionNode, point1 tree.ActionNode) {
-	point2 := getActionChild(node2)
-	if point2 == nil {
-		return
-	}
-
-	node1.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc {
-			f.ReplaceA(point1, point2)
-		}
-	})
-	node2.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc {
-			f.ReplaceA(point2, point1)
+			//if replaced {
+			//	fmt.Println("Replacing ", cNode, "for", nNode, "at", depth)
+			//}
 		}
 	})
 }

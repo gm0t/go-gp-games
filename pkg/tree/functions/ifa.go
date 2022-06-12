@@ -44,7 +44,7 @@ func (i *IfA) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
 }
 
 func (i *IfA) String() string {
-	return "if"
+	return "if(" + i.condition.String() + ") {" + i.success.String() + "} else {" + i.fail.String() + "})"
 }
 
 func (i *IfA) Dfs(cb func(depth int, n tree.Node), extra ...int) {

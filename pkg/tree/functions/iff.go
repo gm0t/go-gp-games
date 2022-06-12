@@ -18,7 +18,7 @@ func (i *IfF) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
 
 func (i *IfF) Clone() tree.Node {
 	return NewIfF(
-		i.condition.(tree.BooleanNode),
+		i.condition.Clone().(tree.BooleanNode),
 		i.success.Clone().(tree.FloatNode),
 		i.fail.Clone().(tree.FloatNode),
 	)
@@ -44,7 +44,7 @@ func (i *IfF) ReplaceB(cNode tree.BooleanNode, nNode tree.BooleanNode) bool {
 }
 
 func (i *IfF) String() string {
-	return "if"
+	return "if(" + i.condition.String() + ") { " + i.success.String() + "} else {" + i.fail.String() + "})"
 }
 
 func (i *IfF) Dfs(cb func(depth int, n tree.Node), extra ...int) {
