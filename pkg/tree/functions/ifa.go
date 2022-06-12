@@ -12,6 +12,18 @@ type IfA struct {
 	fail      tree.ActionNode
 }
 
+func (i *IfA) Truncate(generator tree.Generator) {
+	if _, isFunc := i.condition.(tree.FunctionNode); isFunc {
+		i.condition = generator.BTerm()
+	}
+	if _, isFunc := i.success.(tree.FunctionNode); isFunc {
+		i.success = generator.ATerm()
+	}
+	if _, isFunc := i.fail.(tree.FunctionNode); isFunc {
+		i.fail = generator.ATerm()
+	}
+}
+
 func (i *IfA) Clone() tree.Node {
 	return NewIfA(
 		i.condition.Clone().(tree.BooleanNode),

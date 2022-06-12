@@ -38,6 +38,8 @@ func (p *Population) Evolve(generations int) {
 
 		mutants := buildMutants(g, p.genes, p.mutationChance, p.fitness, p.generator)
 		children := buildChildren(g, p.genes, p.fitness, p.size)
+		truncate(mutants, p.generator, 3)
+		truncate(mutants, p.generator, 3)
 
 		pool := make([]*Gene, len(mutants)+len(children)+len(p.genes))
 		copy(pool, p.genes)
@@ -49,6 +51,21 @@ func (p *Population) Evolve(generations int) {
 			_, bf := p.Best()
 			_, wf := p.Worst()
 			fmt.Printf("%d generation completed: %v / %v = %.4f - %.4f\n-----\n", g, len(mutants), len(children), wf, bf)
+		}
+	}
+}
+
+func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
+	for _, gene := range genes {
+		agents := make([]tree.FunctionNode, 0)
+		gene.agent.Dfs(func(depth int, n tree.Node) {
+			if f, isFunc := n.(tree.FunctionNode); depth == maxDepth && isFunc {
+				agents = append(agents, f)
+			}
+		})
+
+		for _, agent := range agents {
+			agent.Truncate(generator)
 		}
 	}
 }
@@ -99,7 +116,7 @@ func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness
 	mutants := make([]*Gene, 0)
 	for _, g := range genes {
 		if rand.Float64() <= chance {
-			newAgent := g.agent.Clone().(tree.FloatFunctionNode)
+			newAgent := g.agent.Clone().(tree.FunctionNode)
 			Mutate(newAgent, generator)
 			mutants = append(mutants, &Gene{
 				agent:   newAgent,

@@ -39,6 +39,7 @@ type FunctionNode interface {
 	Node
 	Mutate(generator Generator)
 	Grow(generator Generator)
+	Truncate(generator Generator)
 	ReplaceF(cNode FloatNode, nNode FloatNode) bool
 	ReplaceB(cNode BooleanNode, nNode BooleanNode) bool
 	ReplaceA(cNode ActionNode, nNode ActionNode) bool

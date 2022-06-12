@@ -23,6 +23,15 @@ type Math struct {
 	right tree.FloatNode
 }
 
+func (n *Math) Truncate(generator tree.Generator) {
+	if _, isFunc := n.left.(tree.FunctionNode); isFunc {
+		n.left = generator.FTerm()
+	}
+	if _, isFunc := n.right.(tree.FunctionNode); isFunc {
+		n.right = generator.FTerm()
+	}
+}
+
 func (n *Math) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
 	return false
 }

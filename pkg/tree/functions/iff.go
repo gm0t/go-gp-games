@@ -12,6 +12,18 @@ type IfF struct {
 	fail      tree.FloatNode
 }
 
+func (i *IfF) Truncate(generator tree.Generator) {
+	if _, isFunc := i.condition.(tree.FunctionNode); isFunc {
+		i.condition = generator.BTerm()
+	}
+	if _, isFunc := i.success.(tree.FunctionNode); isFunc {
+		i.success = generator.FTerm()
+	}
+	if _, isFunc := i.fail.(tree.FunctionNode); isFunc {
+		i.fail = generator.FTerm()
+	}
+}
+
 func (i *IfF) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
 	return false
 }

@@ -41,15 +41,18 @@ func createFitness() evolution.Fitness {
 		return catcher.NewState(playerX, playerY, goalX, goalY)
 	}
 
+	var lastWinner tree.Node
 	return func(agent tree.FunctionNode, generation int) float64 {
 		if lastGen != generation {
 			lastGen = generation
-			if solved > 5 {
-				playerX = float64(rand.Intn(30))
-				playerY = float64(rand.Intn(30))
-				goalX = float64(rand.Intn(30)) + 40
-				goalY = float64(rand.Intn(30)) + 40
-				fmt.Printf("\n-----------------\nPuzzle was solved at gen %v %v times, building new state... %v\n-----------------\n", lastGen, solved, state())
+			playerX = float64(rand.Intn(30))
+			playerY = float64(rand.Intn(30))
+			goalX = float64(rand.Intn(30)) + 40
+			goalY = float64(rand.Intn(30)) + 40
+			if solved > 0 {
+				fmt.Printf("\n-----------------\nPuzzle was solved at gen %v %v times\n+++++++++++++++++\n", lastGen, solved)
+				winnerFormula := lastWinner.String()
+				fmt.Printf("Last winner is: %v \n %v -----------------\v\v", len(winnerFormula), winnerFormula)
 			}
 			//fmt.Printf("\n++++++\nPuzzle was solved at gen %v %v times\n++++++\n", lastGen, solved)
 			solved = 0
@@ -59,6 +62,7 @@ func createFitness() evolution.Fitness {
 		result := simulateGame(agent, s)
 		if result.DistanceToGoal < 1 {
 			solved += 1
+			lastWinner = agent
 			return 1 + 1/float64(result.Iterations)
 		}
 
