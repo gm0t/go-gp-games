@@ -1,66 +1,26 @@
 package tree
 
-type Node interface {
-	Dfs(cb func(depth int, n Node), extra ...int)
-	String() string
-	Clone() Node
-}
+type NodeType = string
 
-type BooleanNode interface {
-	Node
-	Resolve(args ResolveArguments) bool
-}
+const (
+	Float    NodeType = "float"
+	Boolean  NodeType = "bool"
+	Action   NodeType = "action"
+	IF       NodeType = "if"
+	Plus     NodeType = "+"
+	Minus    NodeType = "-"
+	Multiply NodeType = "*"
+	Divide   NodeType = "/"
+	Eq       NodeType = "=="
+	Gt       NodeType = ">"
+	Lt       NodeType = "<"
+)
 
-type FloatNode interface {
-	Node
-	Resolve(args ResolveArguments) float64
-}
+var comparisonNodeTypes = []NodeType{Eq, Gt, Lt}
+var mathNodeTypes = []NodeType{Plus, Minus, Minus, Divide, Multiply}
 
-type Action interface{}
-
-type ActionNode interface {
-	Node
-	Resolve(args ResolveArguments) Action
-}
-
-type Generator interface {
-	FFunc() FloatFunctionNode
-	BFunc() BooleanFunctionNode
-	AFunc() ActionFunctionNode
-	FTerm() FloatNode
-	BTerm() BooleanNode
-	ATerm() ActionNode
-	FTree(depth int) FloatFunctionNode
-	ATree(depth int) ActionFunctionNode
-	BTree(depth int) BooleanFunctionNode
-}
-
-type FunctionNode interface {
-	Node
-	Mutate(generator Generator)
-	Grow(generator Generator)
-	Truncate(generator Generator)
-	ReplaceF(cNode FloatNode, nNode FloatNode) bool
-	ReplaceB(cNode BooleanNode, nNode BooleanNode) bool
-	ReplaceA(cNode ActionNode, nNode ActionNode) bool
-}
-
-type FloatFunctionNode interface {
-	FunctionNode
-	FloatNode
-}
-
-type BooleanFunctionNode interface {
-	FunctionNode
-	BooleanNode
-}
-
-type ActionFunctionNode interface {
-	FunctionNode
-	ActionNode
-}
-
-type ResolveArguments interface {
-	Float(key string) float64
-	Boolean(key string) bool
+type Node struct {
+	Key      string   `json:"key"`
+	Type     NodeType `json:"type"`
+	Children []*Node  `json:"children"`
 }

@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"lr1Go/pkg/game/catcher/actions"
-	"lr1Go/pkg/tree"
+	"lr1Go/pkg/old-tree"
 )
 
 type Player interface {
@@ -12,7 +12,7 @@ type Player interface {
 }
 
 type AiFPlayer struct {
-	strategy tree.FloatNode
+	strategy old_tree.FloatNode
 }
 
 func (ai *AiFPlayer) GetAction(state *State) actions.Action {
@@ -35,12 +35,12 @@ func (ai *AiFPlayer) GetAction(state *State) actions.Action {
 	return bestAction
 }
 
-func NewAiFPlayer(strategy tree.FloatNode) *AiFPlayer {
+func NewAiFPlayer(strategy old_tree.FloatNode) *AiFPlayer {
 	return &AiFPlayer{strategy: strategy}
 }
 
 type AiAPlayer struct {
-	strategy tree.ActionNode
+	strategy old_tree.ActionNode
 }
 
 func (ai *AiAPlayer) GetAction(state *State) actions.Action {
@@ -49,6 +49,6 @@ func (ai *AiAPlayer) GetAction(state *State) actions.Action {
 	return action.(actions.Action)
 }
 
-func NewAiAPlayer(strategy tree.ActionNode) *AiAPlayer {
+func NewAiAPlayer(strategy old_tree.ActionNode) *AiAPlayer {
 	return &AiAPlayer{strategy: strategy}
 }

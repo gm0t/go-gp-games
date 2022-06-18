@@ -3,7 +3,7 @@ package functions
 import (
 	"math/rand"
 
-	"lr1Go/pkg/tree"
+	"lr1Go/pkg/old-tree"
 )
 
 type MathOp string
@@ -19,32 +19,32 @@ var AllMathOps = []MathOp{Plus, Minus, Multiplication, Division}
 
 type Math struct {
 	op    MathOp
-	left  tree.FloatNode
-	right tree.FloatNode
+	left  old_tree.FloatNode
+	right old_tree.FloatNode
 }
 
-func (n *Math) Truncate(generator tree.Generator) {
-	if _, isFunc := n.left.(tree.FunctionNode); isFunc {
+func (n *Math) Truncate(generator old_tree.Generator) {
+	if _, isFunc := n.left.(old_tree.FunctionNode); isFunc {
 		n.left = generator.FTerm()
 	}
-	if _, isFunc := n.right.(tree.FunctionNode); isFunc {
+	if _, isFunc := n.right.(old_tree.FunctionNode); isFunc {
 		n.right = generator.FTerm()
 	}
 }
 
-func (n *Math) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
+func (n *Math) ReplaceA(cNode old_tree.ActionNode, nNode old_tree.ActionNode) bool {
 	return false
 }
 
-func (n *Math) Clone() tree.Node {
+func (n *Math) Clone() old_tree.Node {
 	return NewMath(
 		n.op,
-		n.left.Clone().(tree.FloatNode),
-		n.right.Clone().(tree.FloatNode),
+		n.left.Clone().(old_tree.FloatNode),
+		n.right.Clone().(old_tree.FloatNode),
 	)
 }
 
-func (n *Math) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
+func (n *Math) ReplaceF(cNode old_tree.FloatNode, nNode old_tree.FloatNode) bool {
 	if n.left == cNode {
 		n.left = nNode
 		return true
@@ -55,7 +55,7 @@ func (n *Math) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
 	return false
 }
 
-func (n *Math) ReplaceB(tree.BooleanNode, tree.BooleanNode) bool {
+func (n *Math) ReplaceB(old_tree.BooleanNode, old_tree.BooleanNode) bool {
 	return false
 }
 
@@ -63,14 +63,14 @@ func (n *Math) String() string {
 	return "(" + n.left.String() + string(n.op) + n.right.String() + ")"
 }
 
-func (n *Math) Dfs(cb func(depth int, n tree.Node), extra ...int) {
+func (n *Math) Dfs(cb func(depth int, n old_tree.Node), extra ...int) {
 	depth := extractDepth(extra)
 	cb(depth, n)
 	n.left.Dfs(cb, depth+1)
 	n.right.Dfs(cb, depth+1)
 }
 
-func (n *Math) Mutate(g tree.Generator) {
+func (n *Math) Mutate(g old_tree.Generator) {
 	switch rand.Intn(5) {
 	case 0:
 		n.op = getRandom(AllMathOps)
@@ -85,12 +85,12 @@ func (n *Math) Mutate(g tree.Generator) {
 	}
 }
 
-func (n *Math) Grow(g tree.Generator) {
+func (n *Math) Grow(g old_tree.Generator) {
 	n.left = g.FFunc()
 	n.right = g.FFunc()
 }
 
-func (n *Math) Resolve(args tree.ResolveArguments) float64 {
+func (n *Math) Resolve(args old_tree.ResolveArguments) float64 {
 	right := n.right.Resolve(args)
 	left := n.left.Resolve(args)
 
@@ -111,7 +111,7 @@ func (n *Math) Resolve(args tree.ResolveArguments) float64 {
 	panic("Unknown op: " + string(n.op))
 }
 
-func NewMath(op MathOp, left tree.FloatNode, right tree.FloatNode) *Math {
+func NewMath(op MathOp, left old_tree.FloatNode, right old_tree.FloatNode) *Math {
 	return &Math{
 		op:    op,
 		left:  left,

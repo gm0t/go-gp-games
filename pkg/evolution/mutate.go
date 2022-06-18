@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"math/rand"
 
-	"lr1Go/pkg/tree"
+	"lr1Go/pkg/old-tree"
 )
 
-func Mutate(node tree.Node, generator tree.Generator) {
-	allNodes := make([]tree.FunctionNode, 0)
-	node.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc {
+func Mutate(node old_tree.Node, generator old_tree.Generator) {
+	allNodes := make([]old_tree.FunctionNode, 0)
+	node.Dfs(func(depth int, n old_tree.Node) {
+		if f, isFunc := n.(old_tree.FunctionNode); isFunc {
 			allNodes = append(allNodes, f)
 		}
 	})
@@ -23,8 +23,8 @@ func Mutate(node tree.Node, generator tree.Generator) {
 	candidate := getRandom(allNodes)
 	candidate.Mutate(generator)
 
-	node.Dfs(func(depth int, n tree.Node) {
-		if f, isFunc := n.(tree.FunctionNode); isFunc && rand.Float64() < 0.1 {
+	node.Dfs(func(depth int, n old_tree.Node) {
+		if f, isFunc := n.(old_tree.FunctionNode); isFunc && rand.Float64() < 0.1 {
 			f.Mutate(generator)
 		}
 	})

@@ -3,7 +3,7 @@ package functions
 import (
 	"math/rand"
 
-	"lr1Go/pkg/tree"
+	"lr1Go/pkg/old-tree"
 )
 
 type CompOp string
@@ -18,24 +18,24 @@ var AllCompOps = []CompOp{Eq, Lt, Gt}
 
 type Comparison struct {
 	op    CompOp
-	left  tree.FloatNode
-	right tree.FloatNode
+	left  old_tree.FloatNode
+	right old_tree.FloatNode
 }
 
-func (n *Comparison) Truncate(generator tree.Generator) {
-	if _, isFunc := n.left.(tree.FunctionNode); isFunc {
+func (n *Comparison) Truncate(generator old_tree.Generator) {
+	if _, isFunc := n.left.(old_tree.FunctionNode); isFunc {
 		n.left = generator.FTerm()
 	}
-	if _, isFunc := n.right.(tree.FunctionNode); isFunc {
+	if _, isFunc := n.right.(old_tree.FunctionNode); isFunc {
 		n.right = generator.FTerm()
 	}
 }
 
-func (n *Comparison) ReplaceA(cNode tree.ActionNode, nNode tree.ActionNode) bool {
+func (n *Comparison) ReplaceA(cNode old_tree.ActionNode, nNode old_tree.ActionNode) bool {
 	return false
 }
 
-func (n *Comparison) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
+func (n *Comparison) ReplaceF(cNode old_tree.FloatNode, nNode old_tree.FloatNode) bool {
 	if n.left == cNode {
 		n.left = nNode
 		return true
@@ -46,15 +46,15 @@ func (n *Comparison) ReplaceF(cNode tree.FloatNode, nNode tree.FloatNode) bool {
 	return false
 }
 
-func (n *Comparison) ReplaceB(tree.BooleanNode, tree.BooleanNode) bool {
+func (n *Comparison) ReplaceB(old_tree.BooleanNode, old_tree.BooleanNode) bool {
 	return false
 }
 
-func (n *Comparison) Clone() tree.Node {
+func (n *Comparison) Clone() old_tree.Node {
 	return NewComparison(
 		n.op,
-		n.left.Clone().(tree.FloatNode),
-		n.right.Clone().(tree.FloatNode),
+		n.left.Clone().(old_tree.FloatNode),
+		n.right.Clone().(old_tree.FloatNode),
 	)
 }
 
@@ -62,14 +62,14 @@ func (n *Comparison) String() string {
 	return n.left.String() + string(n.op) + n.right.String()
 }
 
-func (n *Comparison) Dfs(cb func(depth int, n tree.Node), extra ...int) {
+func (n *Comparison) Dfs(cb func(depth int, n old_tree.Node), extra ...int) {
 	depth := extractDepth(extra)
 	cb(depth, n)
 	n.left.Dfs(cb, depth+1)
 	n.right.Dfs(cb, depth+1)
 }
 
-func (n *Comparison) Resolve(args tree.ResolveArguments) bool {
+func (n *Comparison) Resolve(args old_tree.ResolveArguments) bool {
 	r := n.right.Resolve(args)
 	l := n.left.Resolve(args)
 	switch n.op {
@@ -84,7 +84,7 @@ func (n *Comparison) Resolve(args tree.ResolveArguments) bool {
 	panic("Unknown comparison op: " + n.op)
 }
 
-func (n *Comparison) Mutate(g tree.Generator) {
+func (n *Comparison) Mutate(g old_tree.Generator) {
 	switch rand.Intn(5) {
 	case 0:
 		n.op = getRandom(AllCompOps)
@@ -99,11 +99,11 @@ func (n *Comparison) Mutate(g tree.Generator) {
 	}
 }
 
-func (n *Comparison) Grow(g tree.Generator) {
+func (n *Comparison) Grow(g old_tree.Generator) {
 	n.left = g.FFunc()
 	n.right = g.FFunc()
 }
 
-func NewComparison(op CompOp, left tree.FloatNode, right tree.FloatNode) *Comparison {
+func NewComparison(op CompOp, left old_tree.FloatNode, right old_tree.FloatNode) *Comparison {
 	return &Comparison{op: op, left: left, right: right}
 }
