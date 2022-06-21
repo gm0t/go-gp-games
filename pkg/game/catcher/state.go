@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"lr1Go/pkg/game/catcher/actions"
-	"lr1Go/pkg/old-tree"
+	"lr1Go/pkg/tree"
 )
 
 const (
@@ -34,6 +34,10 @@ func NewState(playerX float64, playerY float64, goalX float64, goalY float64) *S
 type Args struct {
 	floatArgs map[string]float64
 	boolArgs  map[string]bool
+}
+
+func (a Args) Action(key string) interface{} {
+	return key
 }
 
 func (a Args) Float(key string) float64 {
@@ -68,7 +72,7 @@ func (s *State) Clone() *State {
 	}
 }
 
-func (s *State) BuildArgs() old_tree.ResolveArguments {
+func (s *State) BuildArgs() tree.ResolveArguments {
 	return Args{
 		floatArgs: map[string]float64{
 			MyX:   s.PlayerX,

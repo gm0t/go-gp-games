@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"lr1Go/pkg/game/catcher/actions"
-	"lr1Go/pkg/old-tree"
+	"lr1Go/pkg/tree"
 )
 
 type Player interface {
@@ -12,7 +12,7 @@ type Player interface {
 }
 
 type AiFPlayer struct {
-	strategy old_tree.FloatNode
+	strategy *tree.Node
 }
 
 func (ai *AiFPlayer) GetAction(state *State) actions.Action {
@@ -25,7 +25,7 @@ func (ai *AiFPlayer) GetAction(state *State) actions.Action {
 
 	for _, action := range allActions {
 		args := state.Clone().Apply(action).BuildArgs()
-		score := strategy.Resolve(args)
+		score := tree.Resolve(strategy, args).(float64)
 		if score < bestScore {
 			bestScore = score
 			bestAction = action
@@ -35,20 +35,18 @@ func (ai *AiFPlayer) GetAction(state *State) actions.Action {
 	return bestAction
 }
 
-func NewAiFPlayer(strategy old_tree.FloatNode) *AiFPlayer {
+func NewAiFPlayer(strategy *tree.Node) *AiFPlayer {
 	return &AiFPlayer{strategy: strategy}
 }
 
 type AiAPlayer struct {
-	strategy old_tree.ActionNode
+	strategy *tree.Node
 }
 
 func (ai *AiAPlayer) GetAction(state *State) actions.Action {
-	action := ai.strategy.Resolve(state.BuildArgs())
-
-	return action.(actions.Action)
+	return tree.Resolve(ai.strategy, state.BuildArgs()).(actions.Action)
 }
 
-func NewAiAPlayer(strategy old_tree.ActionNode) *AiAPlayer {
+func NewAiAPlayer(strategy *tree.Node) *AiAPlayer {
 	return &AiAPlayer{strategy: strategy}
 }

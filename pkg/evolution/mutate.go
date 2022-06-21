@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"math/rand"
 
-	"lr1Go/pkg/old-tree"
+	"lr1Go/pkg/tree"
 )
 
-func Mutate(node old_tree.Node, generator old_tree.Generator) {
-	allNodes := make([]old_tree.FunctionNode, 0)
-	node.Dfs(func(depth int, n old_tree.Node) {
-		if f, isFunc := n.(old_tree.FunctionNode); isFunc {
-			allNodes = append(allNodes, f)
-		}
+func Mutate(root *tree.Node, generator tree.Generator) {
+	allNodes := make([]*tree.Node, 0)
+	tree.Dfs(root, func(node *tree.Node, depth int) {
+		allNodes = append(allNodes, node)
 	})
 
 	if len(allNodes) < 1 {
@@ -20,12 +18,82 @@ func Mutate(node old_tree.Node, generator old_tree.Generator) {
 		return
 	}
 
-	candidate := getRandom(allNodes)
-	candidate.Mutate(generator)
+	mutant := getRandom(allNodes)
 
-	node.Dfs(func(depth int, n old_tree.Node) {
-		if f, isFunc := n.(old_tree.FunctionNode); isFunc && rand.Float64() < 0.1 {
-			f.Mutate(generator)
-		}
-	})
+	switch mutant.Type {
+	case tree.Float:
+		fallthrough
+	case tree.Boolean:
+		fallthrough
+	case tree.Action:
+		mutateTerm(mutant, generator)
+	case tree.IF:
+		mutateIf(mutant, generator)
+	case tree.Plus:
+		fallthrough
+	case tree.Minus:
+		fallthrough
+	case tree.Divide:
+		fallthrough
+	case tree.Multiply:
+		mutateMath(mutant, generator)
+	case tree.Eq:
+		fallthrough
+	case tree.Gt:
+		fallthrough
+	case tree.Lt:
+		mutateBFunc(mutant, generator)
+	}
+}
+
+func mutateMath(node *tree.Node, generator tree.Generator) {
+	switch rand.Intn(4) {
+	case 0:
+		newOp := getRandom(tree.MathOperators())
+		node.Type = newOp
+		node.Key = newOp
+	case 1:
+		Mutate(node.Children[0], generator)
+	case 2:
+		Mutate(node.Children[1], generator)
+	case 3:
+		overwrite(node, generator.Term(tree.Float))
+	}
+}
+func mutateIf(node *tree.Node, generator tree.Generator) {
+	switch rand.Intn(3) {
+	case 0:
+		mutateBFunc(node.Children[0], generator)
+	case 1:
+		Mutate(node.Children[1], generator)
+	case 2:
+		Mutate(node.Children[2], generator)
+	}
+}
+
+func mutateBFunc(node *tree.Node, generator tree.Generator) {
+	switch rand.Intn(3) {
+	case 0:
+		newOp := getRandom(tree.ComparisonOperators())
+		node.Type = newOp
+		node.Key = newOp
+	case 1:
+		Mutate(node.Children[0], generator)
+	case 2:
+		Mutate(node.Children[1], generator)
+	}
+}
+
+func mutateTerm(node *tree.Node, generator tree.Generator) {
+	if rand.Float32() < 0.8 {
+		overwrite(node, generator.Term(node.Type))
+	} else {
+		overwrite(node, generator.Tree(node.Type, 1+rand.Intn(2)))
+	}
+}
+
+func overwrite(dst *tree.Node, source *tree.Node) {
+	dst.Type = source.Type
+	dst.Children = source.Children
+	dst.Key = source.Key
 }

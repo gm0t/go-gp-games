@@ -5,7 +5,7 @@ import (
 	"math/rand"
 
 	"lr1Go/pkg/evolution"
-	"lr1Go/pkg/old-tree"
+	"lr1Go/pkg/tree"
 )
 
 func NewFitness() evolution.Fitness {
@@ -20,8 +20,8 @@ func NewFitness() evolution.Fitness {
 		return NewState(playerX, playerY, goalX, goalY)
 	}
 
-	var lastWinner old_tree.Node
-	return func(agent old_tree.FunctionNode, generation int) float64 {
+	var lastWinner *tree.Node
+	return func(agent *tree.Node, generation int) float64 {
 		if lastGen != generation {
 			lastGen = generation
 			playerX = float64(rand.Intn(30))
@@ -49,19 +49,20 @@ func NewFitness() evolution.Fitness {
 	}
 }
 
-func simulateGame(agent old_tree.FunctionNode, state *State) Result {
+func simulateGame(agent *tree.Node, state *State) Result {
 	game := NewGame(state, buildPlayer(agent))
 	return game.Run(200)
 }
 
-func buildPlayer(agent old_tree.FunctionNode) Player {
-	if fAgent, isFloat := agent.(old_tree.FloatFunctionNode); isFloat {
-		return NewAiFPlayer(fAgent)
-	}
+func buildPlayer(agent *tree.Node) Player {
+	return NewAiFPlayer(agent)
+	//
+	//switch agent.Type {
+	//case tree.Float:
+	//	return NewAiFPlayer(agent)
+	//case tree.Action:
+	//	return NewAiAPlayer(agent)
+	//}
 
-	if aAgent, isAction := agent.(old_tree.ActionFunctionNode); isAction {
-		return NewAiAPlayer(aAgent)
-	}
-
-	panic("Unknown type of agent!")
+	//panic("Unknown type of agent: " + agent.Type)
 }

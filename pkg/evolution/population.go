@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"math/rand"
 
-	"lr1Go/pkg/old-tree"
+	"lr1Go/pkg/tree"
 )
 
 type Gene struct {
-	agent   old_tree.FunctionNode
+	agent   *tree.Node
 	fitness float64
 }
 
-type Fitness func(node old_tree.FunctionNode, generation int) float64
+type Fitness func(node *tree.Node, generation int) float64
 
 type Options struct {
 	MaxGenerations int
@@ -21,7 +21,7 @@ type Options struct {
 
 type Population struct {
 	size           int
-	generator      old_tree.Generator
+	generator      tree.Generator
 	fitness        Fitness
 	genes          []*Gene
 	mutationChance float64
@@ -55,22 +55,22 @@ func (p *Population) Evolve(generations int) {
 	}
 }
 
-func truncate(genes []*Gene, generator old_tree.Generator, maxDepth int) {
+func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
 	for _, gene := range genes {
-		agents := make([]old_tree.FunctionNode, 0)
-		gene.agent.Dfs(func(depth int, n old_tree.Node) {
-			if f, isFunc := n.(old_tree.FunctionNode); depth == maxDepth && isFunc {
-				agents = append(agents, f)
+		agents := make([]*tree.Node, 0)
+		tree.Dfs(gene.agent, func(n *tree.Node, depth int) {
+			if depth == maxDepth {
+				agents = append(agents, n)
 			}
 		})
 
 		for _, agent := range agents {
-			agent.Truncate(generator)
+			generator.Truncate(agent)
 		}
 	}
 }
 
-func (p *Population) Best() (old_tree.Node, float64) {
+func (p *Population) Best() (*tree.Node, float64) {
 	var best *Gene
 	for _, g := range p.genes {
 		if best == nil || best.fitness < g.fitness {
@@ -80,7 +80,7 @@ func (p *Population) Best() (old_tree.Node, float64) {
 	return best.agent, best.fitness
 }
 
-func (p *Population) Worst() (old_tree.Node, float64) {
+func (p *Population) Worst() (*tree.Node, float64) {
 	var worst *Gene
 	for _, g := range p.genes {
 		if worst == nil || worst.fitness > g.fitness {
@@ -112,11 +112,11 @@ func buildChildren(generation int, genes []*Gene, fitness Fitness, size int) []*
 	return children
 }
 
-func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness, generator old_tree.Generator) []*Gene {
+func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness, generator tree.Generator) []*Gene {
 	mutants := make([]*Gene, 0)
 	for _, g := range genes {
 		if rand.Float64() <= chance {
-			newAgent := g.agent.Clone().(old_tree.FunctionNode)
+			newAgent := tree.Clone(g.agent)
 			Mutate(newAgent, generator)
 			mutants = append(mutants, &Gene{
 				agent:   newAgent,
@@ -129,13 +129,13 @@ func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness
 
 func NewPopulation(
 	size int,
-	generator old_tree.Generator,
+	generator tree.Generator,
 	fitness Fitness,
 	mutationChance float64,
 ) *Population {
 	initialGenes := make([]*Gene, 0)
 	for i := 0; i < size; i += 1 {
-		agent := generator.ATree(2)
+		agent := generator.FTree(2)
 		initialGenes = append(initialGenes, &Gene{
 			agent:   agent,
 			fitness: 0,

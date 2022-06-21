@@ -3,7 +3,7 @@ package evolution
 import (
 	"math/rand"
 
-	"lr1Go/pkg/old-tree"
+	"lr1Go/pkg/tree"
 )
 
 type RouletteSelector struct {
@@ -46,7 +46,7 @@ func (s *RouletteSelector) Select(size int) []*Gene {
 	for i := 0; i < size; i += 1 {
 		chosen := s.Pick()
 		selection[i] = &Gene{
-			agent:   chosen.agent.Clone().(old_tree.FunctionNode),
+			agent:   tree.Clone(chosen.agent),
 			fitness: chosen.fitness,
 		}
 	}
