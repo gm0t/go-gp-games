@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -12,13 +13,8 @@ type ResolveArguments interface {
 
 func Resolve(node *Node, args ResolveArguments) interface{} {
 	children := node.Children
-	switch node.Type {
-	case Float:
-		return args.Float(node.Key)
-	case Boolean:
-		return args.Boolean(node.Key)
-	case Action:
-		return args.Action(node.Key)
+	// functions
+	switch node.Key {
 	case IF:
 		if resolveBoolean(children[0], args) {
 			return Resolve(children[1], args)
@@ -33,7 +29,7 @@ func Resolve(node *Node, args ResolveArguments) interface{} {
 	case Divide:
 		right := resolveFloat(children[1], args)
 		if right == 0 {
-			return 0
+			return float64(0)
 		}
 		return resolveFloat(children[0], args) / right
 	case Gt:
@@ -44,11 +40,27 @@ func Resolve(node *Node, args ResolveArguments) interface{} {
 		return math.Abs(resolveFloat(children[0], args)-resolveFloat(children[1], args)) < 0.01
 	}
 
+	// terminals
+	switch node.Type {
+	case Float:
+		return args.Float(node.Key)
+	case Boolean:
+		return args.Boolean(node.Key)
+	case Action:
+		return args.Action(node.Key)
+	}
+
 	panic("Unknown node type :" + node.Type)
 }
 
 func resolveFloat(node *Node, args ResolveArguments) float64 {
-	return Resolve(node, args).(float64)
+	value := Resolve(node, args)
+	if f, isFloat := value.(float64); isFloat {
+		return f
+	}
+
+	fmt.Println("NOT A FLAOT: ", value)
+	return 0
 }
 
 func resolveBoolean(node *Node, args ResolveArguments) bool {

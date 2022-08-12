@@ -3,9 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <title>GP Lab 1</title>
+    <link rel="stylesheet" href="/static/main.css"/>
 </head>
 <body>
-    <h1>Hello!</h1>
+<div id="loader">
+    <div class="lds-circle">
+        <div></div>
+    </div>
+</div>
+<div id="app" class="hidden">
+    <div class="info">
+        <h3>Stats:</h3>
+        <ul>
+            <li id="info-generations"></li>
+            <li id="info-best"></li>
+            <li id="info-all"></li>
+        </ul>
+        <h3>Loaded agent:</h3>
+        <textarea  readonly id="agent-func"></textarea>
+        <h3>Current state:</h3>
+        <ul>
+            <li><b>MyX:</b> <span id="state-myx">n/a</span></li>
+            <li><b>MyY:</b> <span id="state-myy">n/a</span></li>
+            <li><b>GoalX:</b> <span id="state-goalx">n/a</span></li>
+            <li><b>GoalY:</b> <span id="state-goaly">n/a</span></li>
+        </ul>
 
+        <h3>Action weights:</h3>
+        <div id="test-agent-result">n/a</div>
+    </div>
+    <div class="simulator">
+        <canvas id="renderer" width="600" height="600"></canvas>
+        <hr/>
+        <form id="simulation-params">
+            <fieldset>
+                <legend>Simulation</legend>
+                <label>
+                    <b>Delay:</b>
+                    <input type="number" name="index" value="50" min="0" max="5000" id="simulation-delay"/>
+                </label>
+                <br/>
+                <br/>
+                <label><input name="mode" value="best" checked type="radio">Best</label>
+<!--                <label><input name="mode" value="elite" type="radio">Elite</label>-->
+                <label><input name="mode" value="index" type="radio">By index</label>
+
+                <label>
+                    <input type="number" name="index" value="0" min="0" max="50" id="agent-index"/>
+                </label>
+                <br/>
+                <br/>
+                <button id="run" type="button">
+                    Load
+                </button>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript" src="/static/js/index.js"></script>
 </body>
 </html>

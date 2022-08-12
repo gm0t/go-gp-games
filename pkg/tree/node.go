@@ -5,30 +5,34 @@ import (
 )
 
 type NodeType = string
+type NodeKey = string
 
 const (
-	Float    NodeType = "float"
-	Boolean  NodeType = "bool"
-	Action   NodeType = "action"
-	IF       NodeType = "if"
-	Plus     NodeType = "+"
-	Minus    NodeType = "-"
-	Multiply NodeType = "*"
-	Divide   NodeType = "/"
-	Eq       NodeType = "=="
-	Gt       NodeType = ">"
-	Lt       NodeType = "<"
+	Float   NodeType = "float"
+	Boolean NodeType = "bool"
+	Action  NodeType = "action"
 )
 
-var comparisonNodeTypes = []NodeType{Eq, Gt, Lt}
-var mathNodeTypes = []NodeType{Plus, Minus, Minus, Divide, Multiply}
+const (
+	IF       NodeKey = "if"
+	Plus     NodeKey = "+"
+	Minus    NodeKey = "-"
+	Multiply NodeKey = "*"
+	Divide   NodeKey = "/"
+	Eq       NodeKey = "=="
+	Gt       NodeKey = ">"
+	Lt       NodeKey = "<"
+)
+
+var comparisonNodes = []NodeType{Eq, Gt, Lt}
+var mathNodes = []NodeType{Plus, Minus, Minus, Divide, Multiply}
 
 func ComparisonOperators() []NodeType {
-	return comparisonNodeTypes
+	return comparisonNodes
 }
 
 func MathOperators() []NodeType {
-	return mathNodeTypes
+	return mathNodes
 }
 
 type Node struct {
@@ -38,13 +42,7 @@ type Node struct {
 }
 
 func (n *Node) String() string {
-	switch n.Type {
-	case Float:
-		fallthrough
-	case Boolean:
-		fallthrough
-	case Action:
-		return n.Key
+	switch n.Key {
 	case IF:
 		return fmt.Sprintf("(%v ? %v : %v)", n.Children[0], n.Children[1], n.Children[2])
 	case Plus:
@@ -63,5 +61,5 @@ func (n *Node) String() string {
 		return fmt.Sprintf("(%v %v %v)", n.Children[0], n.Key, n.Children[1])
 	}
 
-	return "(Unknown: " + n.Type + ")"
+	return n.Key
 }

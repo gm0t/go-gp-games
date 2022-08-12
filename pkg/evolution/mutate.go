@@ -20,13 +20,7 @@ func Mutate(root *tree.Node, generator tree.Generator) {
 
 	mutant := getRandom(allNodes)
 
-	switch mutant.Type {
-	case tree.Float:
-		fallthrough
-	case tree.Boolean:
-		fallthrough
-	case tree.Action:
-		mutateTerm(mutant, generator)
+	switch mutant.Key {
 	case tree.IF:
 		mutateIf(mutant, generator)
 	case tree.Plus:
@@ -43,14 +37,16 @@ func Mutate(root *tree.Node, generator tree.Generator) {
 		fallthrough
 	case tree.Lt:
 		mutateBFunc(mutant, generator)
+	default:
+		mutateTerm(mutant, generator)
 	}
+
 }
 
 func mutateMath(node *tree.Node, generator tree.Generator) {
 	switch rand.Intn(4) {
 	case 0:
 		newOp := getRandom(tree.MathOperators())
-		node.Type = newOp
 		node.Key = newOp
 	case 1:
 		Mutate(node.Children[0], generator)
@@ -75,7 +71,6 @@ func mutateBFunc(node *tree.Node, generator tree.Generator) {
 	switch rand.Intn(3) {
 	case 0:
 		newOp := getRandom(tree.ComparisonOperators())
-		node.Type = newOp
 		node.Key = newOp
 	case 1:
 		Mutate(node.Children[0], generator)

@@ -15,10 +15,10 @@ func NewRouletteSelector(genes []*Gene) *RouletteSelector {
 	var totalFitness float64
 	normalizedFitness := make([]float64, len(genes))
 	for _, gen := range genes {
-		totalFitness += gen.fitness
+		totalFitness += gen.Fitness
 	}
 	for i, gen := range genes {
-		normalizedFitness[i] = gen.fitness / totalFitness
+		normalizedFitness[i] = gen.Fitness / totalFitness
 	}
 
 	return &RouletteSelector{
@@ -46,8 +46,8 @@ func (s *RouletteSelector) Select(size int) []*Gene {
 	for i := 0; i < size; i += 1 {
 		chosen := s.Pick()
 		selection[i] = &Gene{
-			agent:   tree.Clone(chosen.agent),
-			fitness: chosen.fitness,
+			Agent:   tree.Clone(chosen.Agent),
+			Fitness: chosen.Fitness,
 		}
 	}
 

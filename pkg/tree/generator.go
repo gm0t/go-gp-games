@@ -4,7 +4,7 @@ import (
 	"math/rand"
 )
 
-func NewFunction(k string, t NodeType, children []*Node) *Node {
+func NewFunction(k NodeKey, t NodeType, children []*Node) *Node {
 	return &Node{
 		Key:      k,
 		Type:     t,
@@ -13,7 +13,10 @@ func NewFunction(k string, t NodeType, children []*Node) *Node {
 }
 
 func NewIf(condition *Node, success *Node, fail *Node) *Node {
-	return NewFunction("if", IF, []*Node{condition, success, fail})
+	if success.Type != fail.Type {
+		panic("Mismatching types: " + success.Type + " / " + fail.Type)
+	}
+	return NewFunction(IF, success.Type, []*Node{condition, success, fail})
 }
 func NewTerminal(k string, t NodeType) *Node {
 	return &Node{
@@ -75,10 +78,7 @@ func (g *BasicGenerator) Tree(nodeType NodeType, depth int) *Node {
 }
 
 func (g *BasicGenerator) Grow(node *Node) {
-	switch node.Type {
-	case Float:
-		update(node, g.FFunc())
-		return
+	switch node.Key {
 	case IF:
 		update(node, NewIf(g.BFunc(), g.FFunc(), g.FFunc()))
 	case Plus:
@@ -97,19 +97,21 @@ func (g *BasicGenerator) Grow(node *Node) {
 		node.Children = []*Node{g.FFunc(), g.FFunc()}
 		return
 	}
+
+	switch node.Type {
+	case Float:
+		update(node, g.FFunc())
+		return
+	case Boolean:
+		update(node, g.BFunc())
+		return
+	}
 }
 
 func (g *BasicGenerator) Truncate(node *Node) {
-	switch node.Type {
-	case Float:
-		fallthrough
-	case Boolean:
-		fallthrough
-	case Action:
-		// we can't truncate leaf nodes
-		return
+	switch node.Key {
 	case IF:
-		update(node, g.Term(Float))
+		update(node, g.Term(node.Children[1].Type))
 	case Plus:
 		fallthrough
 	case Minus:
@@ -136,6 +138,15 @@ func update(dst *Node, source *Node) {
 }
 
 func (g *BasicGenerator) FFunc() *Node {
+	choice := rand.Intn(len(mathNodes) + 1)
+	if choice < len(mathNodes) {
+		return NewFunction(
+			mathNodes[choice],
+			Float,
+			[]*Node{g.FTerm(), g.FTerm()},
+		)
+	}
+
 	return NewIf(
 		g.BTerm(),
 		g.FTerm(),
@@ -144,10 +155,10 @@ func (g *BasicGenerator) FFunc() *Node {
 }
 
 func (g *BasicGenerator) BFunc() *Node {
-	nType := getRandom(comparisonNodeTypes)
+	nType := getRandom(comparisonNodes)
 	return &Node{
 		Key:      nType,
-		Type:     nType,
+		Type:     Boolean,
 		Children: []*Node{g.FTerm(), g.FTerm()},
 	}
 }

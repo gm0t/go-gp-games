@@ -67,7 +67,7 @@ func (s *State) Clone() *State {
 	return &State{
 		PlayerX: s.PlayerX,
 		PlayerY: s.PlayerY,
-		GoalX:   s.GoalY,
+		GoalX:   s.GoalX,
 		GoalY:   s.GoalY,
 	}
 }
@@ -77,8 +77,8 @@ func (s *State) BuildArgs() tree.ResolveArguments {
 		floatArgs: map[string]float64{
 			MyX:   s.PlayerX,
 			MyY:   s.PlayerY,
-			GoalX: s.PlayerX,
-			GoalY: s.PlayerY,
+			GoalX: s.GoalX,
+			GoalY: s.GoalY,
 		},
 		boolArgs: map[string]bool{},
 	}

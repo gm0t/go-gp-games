@@ -1,7 +1,6 @@
 package evolution
 
 import (
-	"fmt"
 	"math/rand"
 
 	"lr1Go/pkg/tree"
@@ -25,7 +24,7 @@ func getAnyChild(root *tree.Node) *tree.Node {
 func getMatchingChild(root *tree.Node, childType tree.NodeType) *tree.Node {
 	children := make([]*tree.Node, 0)
 	tree.Dfs(root, func(node *tree.Node, depth int) {
-		if depth > 1 && node.Type == childType {
+		if depth > 0 && node.Type == childType {
 			children = append(children, node)
 		}
 	})
@@ -48,13 +47,13 @@ func Crossover(parent1, parent2 *tree.Node) (*tree.Node, *tree.Node) {
 
 	point1 := getAnyChild(node1)
 	if point1 == nil {
-		fmt.Println("Failed to find a good point for crossover in parent 1")
+		//fmt.Println("Failed to find a good point for crossover in parent 1")
 		return nil, nil
 	}
 
 	point2 := getMatchingChild(node2, point1.Type)
 	if point2 == nil {
-		fmt.Println("Failed to find a good point for crossover in parent 2")
+		//fmt.Println("Failed to find a good point for crossover in parent 2")
 		return nil, nil
 	}
 

@@ -35,6 +35,54 @@ func (ai *AiFPlayer) GetAction(state *State) actions.Action {
 	return bestAction
 }
 
+func Normalize(node *tree.Node) *tree.Node {
+	if node.Key == tree.IF {
+		return normalizeIf(node)
+	}
+
+	normalized := *node
+	normalized.Children = normalizeChildren(node.Children)
+	return &normalized
+}
+
+func normalizeChildren(children []*tree.Node) []*tree.Node {
+	newChildren := make([]*tree.Node, len(children))
+	for i, child := range children {
+		newChildren[i] = Normalize(child)
+	}
+
+	return newChildren
+}
+
+func normalizeIf(ifNode *tree.Node) *tree.Node {
+	normalized := *ifNode
+	cond := normalized.Children[0]
+	if isAlwaysTrue(cond) {
+		return Normalize(normalized.Children[1])
+	} else if isAlwaysFalse(cond) {
+		return Normalize(normalized.Children[2])
+	}
+
+	normalized.Children = normalizeChildren(ifNode.Children)
+	return &normalized
+}
+
+func isAlwaysTrue(cond *tree.Node) bool {
+	if cond.Key == tree.Eq {
+		return cond.Children[0].String() == cond.Children[1].String()
+	}
+
+	return false
+}
+
+func isAlwaysFalse(cond *tree.Node) bool {
+	if cond.Key == tree.Lt || cond.Key == tree.Gt {
+		return cond.Children[0].String() == cond.Children[1].String()
+	}
+
+	return false
+}
+
 func NewAiFPlayer(strategy *tree.Node) *AiFPlayer {
 	return &AiFPlayer{strategy: strategy}
 }

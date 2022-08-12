@@ -8,8 +8,9 @@ import (
 )
 
 type Gene struct {
-	agent   *tree.Node
-	fitness float64
+	Agent       *tree.Node `json:"agent"`
+	Generations int        `json:"generations"`
+	Fitness     float64    `json:"fitness"`
 }
 
 type Fitness func(node *tree.Node, generation int) float64
@@ -25,40 +26,49 @@ type Population struct {
 	fitness        Fitness
 	genes          []*Gene
 	mutationChance float64
+	currentGen     int
 }
 
-func (p *Population) Generation() {
+func (p *Population) Genes() []*Gene {
+	return p.genes
+}
+
+func (p *Population) CurrentGeneration() int {
+	return p.currentGen
 }
 
 func (p *Population) Evolve(generations int) {
-	for g := 0; g < generations; g += 1 {
+	for currentGeneration := 0; currentGeneration < generations; currentGeneration += 1 {
 		for _, gen := range p.genes {
-			gen.fitness = p.fitness(gen.agent, g)
+			gen.Fitness = p.fitness(gen.Agent, currentGeneration)
 		}
 
-		mutants := buildMutants(g, p.genes, p.mutationChance, p.fitness, p.generator)
-		children := buildChildren(g, p.genes, p.fitness, p.size)
-		truncate(mutants, p.generator, 3)
-		truncate(mutants, p.generator, 3)
+		mutants := buildMutants(currentGeneration, p.genes, p.mutationChance, p.fitness, p.generator)
+		children := buildChildren(currentGeneration, p.genes, p.fitness, p.size)
+		truncate(mutants, p.generator, 5)
+		truncate(children, p.generator, 5)
 
 		pool := make([]*Gene, len(mutants)+len(children)+len(p.genes))
 		copy(pool, p.genes)
 		copy(pool[len(p.genes):], mutants)
 		copy(pool[len(p.genes)+len(mutants):], children)
 
-		p.genes = NewRouletteSelector(pool).Select(p.size)
-		if g%50 == 0 {
-			_, bf := p.Best()
-			_, wf := p.Worst()
-			fmt.Printf("%d generation completed: %v / %v = %.4f - %.4f\n-----\n", g, len(mutants), len(children), wf, bf)
+		p.genes = NewTournamentSelector(pool).Select(p.size)
+		var longestSurvivor *Gene
+		for _, g := range p.genes {
+			g.Generations += 1
+			if longestSurvivor == nil || longestSurvivor.Generations < g.Generations {
+				longestSurvivor = g
+			}
 		}
+		p.currentGen = currentGeneration
 	}
 }
 
 func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
 	for _, gene := range genes {
 		agents := make([]*tree.Node, 0)
-		tree.Dfs(gene.agent, func(n *tree.Node, depth int) {
+		tree.Dfs(gene.Agent, func(n *tree.Node, depth int) {
 			if depth == maxDepth {
 				agents = append(agents, n)
 			}
@@ -70,41 +80,41 @@ func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
 	}
 }
 
-func (p *Population) Best() (*tree.Node, float64) {
+func (p *Population) Best() *Gene {
 	var best *Gene
 	for _, g := range p.genes {
-		if best == nil || best.fitness < g.fitness {
+		if best == nil || best.Fitness < g.Fitness {
 			best = g
 		}
 	}
-	return best.agent, best.fitness
+	return best
 }
 
-func (p *Population) Worst() (*tree.Node, float64) {
+func (p *Population) Worst() *Gene {
 	var worst *Gene
 	for _, g := range p.genes {
-		if worst == nil || worst.fitness > g.fitness {
+		if worst == nil || worst.Fitness > g.Fitness {
 			worst = g
 		}
 	}
-	return worst.agent, worst.fitness
+	return worst
 }
 
 func buildChildren(generation int, genes []*Gene, fitness Fitness, size int) []*Gene {
 	children := make([]*Gene, 0)
 	roulette := NewRouletteSelector(genes)
 	for i := 0; i < size/2; i += 1 {
-		child1, child2 := Crossover(roulette.Pick().agent, roulette.Pick().agent)
+		child1, child2 := Crossover(roulette.Pick().Agent, roulette.Pick().Agent)
 		if child1 != nil {
 			children = append(children, &Gene{
-				agent:   child1,
-				fitness: fitness(child1, generation),
+				Agent:   child1,
+				Fitness: fitness(child1, generation),
 			})
 		}
 		if child2 != nil {
 			children = append(children, &Gene{
-				agent:   child2,
-				fitness: fitness(child2, generation),
+				Agent:   child2,
+				Fitness: fitness(child2, generation),
 			})
 		}
 	}
@@ -116,16 +126,101 @@ func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness
 	mutants := make([]*Gene, 0)
 	for _, g := range genes {
 		if rand.Float64() <= chance {
-			newAgent := tree.Clone(g.agent)
+			newAgent := tree.Clone(g.Agent)
 			Mutate(newAgent, generator)
 			mutants = append(mutants, &Gene{
-				agent:   newAgent,
-				fitness: fitness(newAgent, generation),
+				Agent:   newAgent,
+				Fitness: fitness(newAgent, generation),
 			})
 		}
 	}
 	return mutants
 }
+
+var perfectAgentX = tree.NewIf(
+	tree.NewFunction(
+		tree.Lt,
+		tree.Boolean,
+		[]*tree.Node{{
+			Key:      "MyX",
+			Type:     "float",
+			Children: nil,
+		}, {
+			Key:      "GoalX",
+			Type:     "float",
+			Children: nil,
+		}},
+	),
+	tree.NewFunction(
+		tree.Minus,
+		tree.Float,
+		[]*tree.Node{{
+			Key:      "GoalX",
+			Type:     "float",
+			Children: nil,
+		}, {
+			Key:      "MyX",
+			Type:     "float",
+			Children: nil,
+		}},
+	),
+	tree.NewFunction(
+		tree.Minus,
+		tree.Float,
+		[]*tree.Node{{
+			Key:      "MyX",
+			Type:     "float",
+			Children: nil,
+		}, &tree.Node{
+			Key:      "GoalX",
+			Type:     "float",
+			Children: nil,
+		}},
+	),
+)
+var perfectAgentY = tree.NewIf(
+	tree.NewFunction(
+		tree.Lt,
+		tree.Boolean,
+		[]*tree.Node{{
+			Key:      "MyY",
+			Type:     "float",
+			Children: nil,
+		}, {
+			Key:      "GoalY",
+			Type:     "float",
+			Children: nil,
+		}},
+	),
+	tree.NewFunction(
+		tree.Minus,
+		tree.Float,
+		[]*tree.Node{{
+			Key:      "GoalY",
+			Type:     "float",
+			Children: nil,
+		}, {
+			Key:      "MyY",
+			Type:     "float",
+			Children: nil,
+		}},
+	),
+	tree.NewFunction(
+		tree.Minus,
+		tree.Float,
+		[]*tree.Node{{
+			Key:      "MyY",
+			Type:     "float",
+			Children: nil,
+		}, {
+			Key:      "GoalY",
+			Type:     "float",
+			Children: nil,
+		}},
+	),
+)
+
+var PerfectAgent = tree.NewFunction(tree.Plus, tree.Float, []*tree.Node{perfectAgentX, perfectAgentY})
 
 func NewPopulation(
 	size int,
@@ -134,13 +229,20 @@ func NewPopulation(
 	mutationChance float64,
 ) *Population {
 	initialGenes := make([]*Gene, 0)
+	//initialGenes = append(initialGenes, &Gene{
+	//	Agent:   PerfectAgent,
+	//	Fitness: 0,
+	//})
+
 	for i := 0; i < size; i += 1 {
-		agent := generator.FTree(2)
+		agent := generator.FTree(4)
 		initialGenes = append(initialGenes, &Gene{
-			agent:   agent,
-			fitness: 0,
+			Agent:   agent,
+			Fitness: 0,
 		})
 	}
+
+	fmt.Println(PerfectAgent, fitness(PerfectAgent, 0))
 
 	return &Population{
 		size:           size,
