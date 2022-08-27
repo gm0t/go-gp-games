@@ -20,7 +20,7 @@ func (g *Game) Run(maxIterations int) Result {
 	player := g.player
 	distance := state.GetCurrentDistance()
 	actions := make([]string, 0)
-	i := 0
+	i := 1
 	for i < maxIterations && distance > 0 {
 		action := player.GetAction(state.Clone())
 		state.Apply(action)

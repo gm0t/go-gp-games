@@ -57,10 +57,18 @@ func normalizeChildren(children []*tree.Node) []*tree.Node {
 func normalizeIf(ifNode *tree.Node) *tree.Node {
 	normalized := *ifNode
 	cond := normalized.Children[0]
+	left := normalized.Children[1]
+	right := normalized.Children[2]
 	if isAlwaysTrue(cond) {
-		return Normalize(normalized.Children[1])
-	} else if isAlwaysFalse(cond) {
-		return Normalize(normalized.Children[2])
+		return Normalize(left)
+	}
+
+	if isAlwaysFalse(cond) {
+		return Normalize(right)
+	}
+
+	if left.String() == right.String() {
+		return Normalize(left)
 	}
 
 	normalized.Children = normalizeChildren(ifNode.Children)

@@ -1,7 +1,10 @@
 package catcher
 
 import (
+	"fmt"
+	"math"
 	"math/rand"
+	"sync"
 
 	"lr1Go/pkg/evolution"
 	"lr1Go/pkg/tree"
@@ -23,8 +26,10 @@ func buildTestStates(count int) []*State {
 func NewFitness() evolution.Fitness {
 	states := buildTestStates(5)
 	lastGen := 0
+	lock := sync.Mutex{}
 	//var lastWinner *tree.Node
 	return func(agent *tree.Node, generation int) float64 {
+		lock.Lock()
 		if lastGen != generation {
 			lastGen = generation
 			states = buildTestStates(5)
@@ -41,7 +46,12 @@ func NewFitness() evolution.Fitness {
 		}
 
 		// average fitness across multiple runs
-		return accumulatedResult / float64(len(states))
+		value := accumulatedResult / float64(len(states))
+		if math.IsInf(value, +1) {
+			fmt.Printf("Fitness is infinite: %v / %v ", accumulatedResult, float64(len(states)))
+		}
+		lock.Unlock()
+		return value
 	}
 }
 

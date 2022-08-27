@@ -47,13 +47,13 @@ func Crossover(parent1, parent2 *tree.Node) (*tree.Node, *tree.Node) {
 
 	point1 := getAnyChild(node1)
 	if point1 == nil {
-		//fmt.Println("Failed to find a good point for crossover in parent 1")
+		//fmt.Println("Failed to findBestBy a good point for crossover in parent 1")
 		return nil, nil
 	}
 
 	point2 := getMatchingChild(node2, point1.Type)
 	if point2 == nil {
-		//fmt.Println("Failed to find a good point for crossover in parent 2")
+		//fmt.Println("Failed to findBestBy a good point for crossover in parent 2")
 		return nil, nil
 	}
 

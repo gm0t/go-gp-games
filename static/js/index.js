@@ -57,30 +57,11 @@ let currentAgent = null;
 const bgColor = "#30CBE8";
 const targetColor = "#FF4431";
 const agentColor = "#3a4a4d";
+const startColor = "#00ff00"
 const targetSize = 6;
-const agentSize = 4;
+const agentSize = 2;
 
 let lastStatus = null;
-
-const patternCanvas = document.createElement('canvas');
-const patternContext = patternCanvas.getContext('2d');
-
-// Give the pattern a width and height of 50
-patternCanvas.width = 4;
-patternCanvas.height = 4;
-
-// Give the pattern a background color and draw an arc
-for (let x = 0; x < patternCanvas.width; x += 1) {
-    for (let y = 0; y < patternCanvas.height; y += 1) {
-        if ((x + y) & 1) {
-            patternContext.fillStyle = agentColor;
-        } else {
-            patternContext.fillStyle = bgColor;
-        }
-        patternContext.fillRect(x, y, 1, 1);
-    }
-}
-let agentPattern;
 
 function printUl(target, elements) {
     target.innerHTML = `
@@ -138,15 +119,15 @@ function moveTarget(x, y) {
     stateGoalY.innerText = y;
 
     if (!isRunning && currentAgent) {
-        console.trace("RESTARTING !!!")
         isRunning = true;
+        resetSimulationScreen();
         makeStep();
     }
 }
 
 function moveAgent(x, y) {
     // drawMarker(agentPosition.x, agentPosition.y, agentSize, bgColor);
-    drawMarker(x, y, agentSize, agentPattern);
+    drawMarker(x, y, agentSize, agentColor);
     agentPosition.x = x;
     agentPosition.y = y;
     stateMyX.innerText = x;
@@ -221,7 +202,7 @@ function makeStep() {
         return;
     }
 
-    const strategy = document.getElementById("agent-func").value;
+    const strategy = document.getElementById("agent-func-optimised").value;
     const evaluate = (myX, myY) => {
         const code = `
         (function(MyX, MyY, GoalX, GoalY) {
@@ -244,6 +225,15 @@ function makeStep() {
     setTimeout(makeStep, +simulationDelay.value)
 }
 
+function resetSimulationScreen() {
+    const ctx = simulatorCanvas.getContext('2d')
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, simulatorCanvas.width, simulatorCanvas.height);
+    moveTarget(targetPosition.x, targetPosition.y);
+    moveAgent(agentPosition.x, agentPosition.y);
+    drawMarker(agentPosition.x, agentPosition.y, targetSize + 6, startColor);
+}
+
 function run() {
     isRunning = true;
     agentPosition = {
@@ -251,13 +241,10 @@ function run() {
         y: Math.ceil(Math.random() * 500),
     };
     loadAgent();
-    const ctx = simulatorCanvas.getContext('2d')
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, simulatorCanvas.width, simulatorCanvas.height);
-    moveTarget(targetPosition.x, targetPosition.y);
-    moveAgent(agentPosition.x, agentPosition.y);
+    resetSimulationScreen();
     runSimulation().then(result => {
-        document.getElementById("agent-func").innerText = result.asString;
+        document.getElementById("agent-func-optimised").innerText = result.asString;
+        document.getElementById("agent-func-original").innerText = result.asStringOriginal;
         makeStep();
     })
 }
@@ -298,7 +285,6 @@ function initApp() {
     stateGoalY = document.getElementById('state-goaly');
 
     simulatorCanvas = document.getElementById('renderer');
-    agentPattern = simulatorCanvas.getContext('2d').createPattern(patternCanvas, 'repeat')
     simulationParams = document.getElementById('simulation-params');
     simulationParams.addEventListener('change', () => {
         simulationParams.elements['index'].disabled = simulationParams.elements['mode'].value === 'best'
@@ -307,9 +293,10 @@ function initApp() {
     simulationParams.elements['index'].disabled = simulationParams.elements['mode'].value === 'best'
 
     simulatorCanvas.addEventListener('click', (e) => {
-        var rect = e.target.getBoundingClientRect();
-        var x = scale(e.clientX - rect.left); //x position within the element.
-        var y = scale(e.clientY - rect.top);  //y position within the element.
+        const rect = e.target.getBoundingClientRect();
+        const x = scale(e.clientX - rect.left); //x position within the element.
+        const y = scale(e.clientY - rect.top);  //y position within the element.
+        resetSimulationScreen();
         moveTarget(x, y)
     });
 

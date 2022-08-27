@@ -1,16 +1,54 @@
 package evolution
 
 import (
-	"fmt"
 	"math/rand"
+	"sort"
 
 	"lr1Go/pkg/tree"
 )
 
 type Gene struct {
-	Agent       *tree.Node `json:"agent"`
-	Generations int        `json:"generations"`
-	Fitness     float64    `json:"fitness"`
+	Agent             *tree.Node `json:"agent"`
+	Generations       int        `json:"generations"`
+	Born              int        `json:"born"`
+	Fitness           float64    `json:"fitness"`
+	FitnessOver10Gens float64    `json:"fitnessOver10Gens"`
+	fitnessLog        []float64
+	fitnessLogIdx     int
+}
+
+func (g *Gene) AddFitness(value float64) {
+	if g.fitnessLog == nil {
+		g.fitnessLog = make([]float64, 10)
+	}
+
+	g.fitnessLog[g.getFitnessLogIdx()] = value
+	g.FitnessOver10Gens = averageNonZero(g.fitnessLog)
+	g.Fitness = value
+}
+
+func averageNonZero(arr []float64) float64 {
+	total := float64(0)
+	cnt := 0
+	for _, value := range arr {
+		if value > 0 {
+			total += value
+			cnt += 1
+		}
+	}
+
+	return total / float64(cnt)
+}
+
+func (g *Gene) getFitnessLogIdx() int {
+	idx := g.fitnessLogIdx
+	if g.fitnessLogIdx == 9 {
+		g.fitnessLogIdx = 0
+	} else {
+		g.fitnessLogIdx += 1
+	}
+
+	return idx
 }
 
 type Fitness func(node *tree.Node, generation int) float64
@@ -21,47 +59,79 @@ type Options struct {
 }
 
 type Population struct {
-	size           int
-	generator      tree.Generator
-	fitness        Fitness
-	genes          []*Gene
-	mutationChance float64
-	currentGen     int
+	size              int
+	generator         tree.Generator
+	fitness           Fitness
+	genes             []*Gene
+	elites            []*Gene
+	mutationChance    float64
+	currentGeneration int
+	isFinished        bool
+	childrenSize      int
+	eliteSize         int
+	isStopping        bool
+	waitingToStop     chan interface{}
 }
 
 func (p *Population) Genes() []*Gene {
 	return p.genes
 }
-
-func (p *Population) CurrentGeneration() int {
-	return p.currentGen
+func (p *Population) Elites() []*Gene {
+	return p.elites
 }
 
-func (p *Population) Evolve(generations int) {
-	for currentGeneration := 0; currentGeneration < generations; currentGeneration += 1 {
+func (p *Population) CurrentGeneration() int {
+	return p.currentGeneration
+}
+
+func (p *Population) Evolve(terminate func(population *Population) bool) {
+	p.elites = make([]*Gene, 0)
+	p.isStopping = false
+
+	for !terminate(p) {
 		for _, gen := range p.genes {
-			gen.Fitness = p.fitness(gen.Agent, currentGeneration)
+			gen.AddFitness(p.fitness(gen.Agent, p.currentGeneration))
+			gen.Generations += 1
+		}
+		for _, gen := range p.elites {
+			gen.AddFitness(p.fitness(gen.Agent, p.currentGeneration))
+			gen.Generations += 1
 		}
 
-		mutants := buildMutants(currentGeneration, p.genes, p.mutationChance, p.fitness, p.generator)
-		children := buildChildren(currentGeneration, p.genes, p.fitness, p.size)
+		mutants := buildMutants(p.currentGeneration, p.genes, p.mutationChance, p.fitness, p.generator)
+		children := buildChildren(p.currentGeneration, p.genes, p.fitness, p.childrenSize)
 		truncate(mutants, p.generator, 5)
 		truncate(children, p.generator, 5)
 
-		pool := make([]*Gene, len(mutants)+len(children)+len(p.genes))
+		poolSize := len(mutants) + len(children) + len(p.genes) + len(p.elites)
+		pool := make([]*Gene, poolSize)
 		copy(pool, p.genes)
 		copy(pool[len(p.genes):], mutants)
 		copy(pool[len(p.genes)+len(mutants):], children)
+		copy(pool[len(p.genes)+len(mutants)+len(children):], p.elites)
 
 		p.genes = NewTournamentSelector(pool).Select(p.size)
-		var longestSurvivor *Gene
-		for _, g := range p.genes {
-			g.Generations += 1
-			if longestSurvivor == nil || longestSurvivor.Generations < g.Generations {
-				longestSurvivor = g
+		sort.Sort(ByFitness(pool))
+		p.elites = make([]*Gene, p.eliteSize)
+		for i := 0; i < p.eliteSize; i += 1 {
+			g := pool[len(pool)-(i+1)]
+			// TODO: elites should be unique!
+			p.elites[i] = &Gene{
+				Agent:             tree.Clone(g.Agent),
+				Generations:       g.Generations,
+				Born:              g.Born,
+				Fitness:           g.Fitness,
+				FitnessOver10Gens: g.FitnessOver10Gens,
+				fitnessLog:        g.fitnessLog,
+				fitnessLogIdx:     g.fitnessLogIdx,
 			}
 		}
-		p.currentGen = currentGeneration
+
+		p.currentGeneration += 1
+		if p.isStopping {
+			p.isFinished = true
+			return
+		}
 	}
 }
 
@@ -81,23 +151,66 @@ func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
 }
 
 func (p *Population) Best() *Gene {
-	var best *Gene
-	for _, g := range p.genes {
-		if best == nil || best.Fitness < g.Fitness {
-			best = g
-		}
+	best := func(current, next *Gene) bool {
+		return next.Fitness > current.Fitness
 	}
-	return best
+
+	if len(p.elites) == 0 {
+		// we don't have any elites yet
+		return findBestBy(p.genes, best)
+	}
+
+	// elite genes are always best
+	return findBestBy(p.elites, best)
+}
+
+func (p *Population) Oldest() *Gene {
+	oldest := func(current, next *Gene) bool {
+		return next.Generations > current.Generations
+	}
+
+	if len(p.elites) == 0 {
+		// we don't have any elites yet
+		return findBestBy(p.genes, oldest)
+	}
+
+	oldestElite := findBestBy(p.elites, oldest)
+	oldestBasic := findBestBy(p.genes, oldest)
+
+	if oldestElite.Generations > oldestBasic.Generations {
+		return oldestElite
+	}
+
+	return oldestBasic
 }
 
 func (p *Population) Worst() *Gene {
-	var worst *Gene
-	for _, g := range p.genes {
-		if worst == nil || worst.Fitness > g.Fitness {
-			worst = g
+	return findBestBy(p.genes, func(current, next *Gene) bool {
+		return next.Fitness < current.Fitness
+	})
+}
+
+func (p *Population) IsFinished() bool {
+	return p.isFinished
+}
+
+func (p *Population) Stop(wait chan interface{}) {
+	p.isStopping = true
+	go func() {
+		for !p.isFinished {
+		}
+		wait <- true
+	}()
+}
+
+func findBestBy(genes []*Gene, condition func(current, next *Gene) bool) *Gene {
+	var current *Gene
+	for _, next := range genes {
+		if current == nil || condition(current, next) {
+			current = next
 		}
 	}
-	return worst
+	return current
 }
 
 func buildChildren(generation int, genes []*Gene, fitness Fitness, size int) []*Gene {
@@ -106,20 +219,23 @@ func buildChildren(generation int, genes []*Gene, fitness Fitness, size int) []*
 	for i := 0; i < size/2; i += 1 {
 		child1, child2 := Crossover(roulette.Pick().Agent, roulette.Pick().Agent)
 		if child1 != nil {
-			children = append(children, &Gene{
-				Agent:   child1,
-				Fitness: fitness(child1, generation),
-			})
+			children = append(children, NewGene(generation, child1, fitness))
 		}
 		if child2 != nil {
-			children = append(children, &Gene{
-				Agent:   child2,
-				Fitness: fitness(child2, generation),
-			})
+			children = append(children, NewGene(generation, child2, fitness))
 		}
 	}
 
 	return children
+}
+
+func NewGene(generation int, agent *tree.Node, fitness Fitness) *Gene {
+	gene := &Gene{
+		Agent: agent,
+		Born:  generation,
+	}
+	gene.AddFitness(fitness(agent, generation))
+	return gene
 }
 
 func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness, generator tree.Generator) []*Gene {
@@ -128,10 +244,7 @@ func buildMutants(generation int, genes []*Gene, chance float64, fitness Fitness
 		if rand.Float64() <= chance {
 			newAgent := tree.Clone(g.Agent)
 			Mutate(newAgent, generator)
-			mutants = append(mutants, &Gene{
-				Agent:   newAgent,
-				Fitness: fitness(newAgent, generation),
-			})
+			mutants = append(mutants, NewGene(generation, newAgent, fitness))
 		}
 	}
 	return mutants
@@ -222,33 +335,47 @@ var perfectAgentY = tree.NewIf(
 
 var PerfectAgent = tree.NewFunction(tree.Plus, tree.Float, []*tree.Node{perfectAgentX, perfectAgentY})
 
-func NewPopulation(
-	size int,
-	generator tree.Generator,
-	fitness Fitness,
-	mutationChance float64,
-) *Population {
-	initialGenes := make([]*Gene, 0)
-	//initialGenes = append(initialGenes, &Gene{
-	//	Agent:   PerfectAgent,
-	//	Fitness: 0,
-	//})
+type Params struct {
+	Size           int
+	ElitesSize     int
+	ChildrenSize   int
+	Generator      tree.Generator
+	Fitness        Fitness
+	MutationChance float64
+}
 
+func buildInitialGenes(size int, generator tree.Generator) []*Gene {
+	genes := make([]*Gene, 0)
 	for i := 0; i < size; i += 1 {
 		agent := generator.FTree(4)
-		initialGenes = append(initialGenes, &Gene{
-			Agent:   agent,
-			Fitness: 0,
+		genes = append(genes, &Gene{
+			Agent:       agent,
+			Born:        0,
+			Generations: 0,
+			Fitness:     0,
 		})
 	}
 
-	fmt.Println(PerfectAgent, fitness(PerfectAgent, 0))
+	return genes
+}
 
+func NewPopulation(params *Params) *Population {
 	return &Population{
-		size:           size,
-		generator:      generator,
-		fitness:        fitness,
-		genes:          initialGenes,
-		mutationChance: mutationChance,
+		size:              params.Size,
+		childrenSize:      params.ChildrenSize,
+		eliteSize:         params.ElitesSize,
+		generator:         params.Generator,
+		fitness:           params.Fitness,
+		genes:             buildInitialGenes(params.Size, params.Generator),
+		elites:            make([]*Gene, 0),
+		mutationChance:    params.MutationChance,
+		currentGeneration: 0,
+		isFinished:        false,
 	}
 }
+
+type ByFitness []*Gene
+
+func (genes ByFitness) Len() int           { return len(genes) }
+func (genes ByFitness) Less(i, j int) bool { return genes[i].Fitness < genes[j].Fitness }
+func (genes ByFitness) Swap(i, j int)      { genes[i], genes[j] = genes[j], genes[i] }
