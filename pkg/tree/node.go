@@ -25,7 +25,9 @@ const (
 )
 
 var comparisonNodes = []NodeType{Eq, Gt, Lt}
-var mathNodes = []NodeType{Plus, Minus, Minus, Divide, Multiply}
+
+//var mathNodes = []NodeType{Plus, Minus, Divide, Multiply}
+var mathNodes = []NodeType{}
 
 func ComparisonOperators() []NodeType {
 	return comparisonNodes

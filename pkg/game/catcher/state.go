@@ -2,6 +2,7 @@ package catcher
 
 import (
 	"math"
+	"strings"
 
 	"lr1Go/pkg/game/catcher/actions"
 	"lr1Go/pkg/tree"
@@ -37,7 +38,20 @@ type Args struct {
 }
 
 func (a Args) Action(key string) interface{} {
-	return key
+	nKey := strings.ToLower(key)
+
+	switch nKey {
+	case "up":
+		return actions.Up
+	case "down":
+		return actions.Down
+	case "right":
+		return actions.Right
+	case "left":
+		return actions.Left
+	}
+
+	panic("Unknown action: " + nKey)
 }
 
 func (a Args) Float(key string) float64 {

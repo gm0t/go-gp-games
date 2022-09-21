@@ -5,6 +5,10 @@ let generationsInfo;
 /**
  * @type HTMLLIElement
  */
+let statusInfo;
+/**
+ * @type HTMLLIElement
+ */
 let bestInfo;
 /**
  * @type HTMLLIElement
@@ -41,6 +45,23 @@ let simulationParams;
  */
 let simulationDelay;
 
+/**
+ * @type HTMLInputElement
+ */
+let sizeParam;
+/**
+ * @type HTMLInputElement
+ */
+let elitesSizeParam;
+/**
+ * @type HTMLInputElement
+ */
+let childrenSizeParam;
+/**
+ * @type HTMLInputElement
+ */
+let mutationChanceParam;
+
 let targetPosition = {
     x: Math.ceil(Math.random() * 500),
     y: Math.ceil(Math.random() * 500),
@@ -62,6 +83,7 @@ const targetSize = 6;
 const agentSize = 2;
 
 let lastStatus = null;
+let editingParams = false;
 
 function printUl(target, elements) {
     target.innerHTML = `
@@ -70,9 +92,17 @@ function printUl(target, elements) {
 }
 
 function updateInfo() {
+    statusInfo.innerHTML = `<b>Status: </b>${lastStatus.finished ? 'Finished!' : 'Running...'}`;
     generationsInfo.innerHTML = `<b>Current generation: </b>${lastStatus.generation}`;
     const best = lastStatus.best;
     const genes = lastStatus.genes;
+
+    if (!editingParams) {
+        sizeParam.value = lastStatus.settings.size;
+        elitesSizeParam.value = lastStatus.settings.elitesSize;
+        childrenSizeParam.value = lastStatus.settings.childrenSize;
+        mutationChanceParam.value = lastStatus.settings.mutationChance;
+    }
 
     let minFitness = Number.MAX_SAFE_INTEGER;
     let avgFitness = 0;
@@ -190,20 +220,20 @@ function handleAction(action) {
 }
 
 function makeStep() {
-    if (!actionsQueue.length) {
-        return runSimulation().then(makeStep);
-    }
-
-    handleAction(actionsQueue.shift());
-
     if (agentPosition.x === targetPosition.x && agentPosition.y === targetPosition.y) {
         isRunning = false;
         console.log("DONE!")
         return;
     }
 
+    if (!actionsQueue.length) {
+        return runSimulation().then(makeStep);
+    }
+
+    handleAction(actionsQueue.shift());
+
     const strategy = document.getElementById("agent-func-optimised").value;
-    const evaluate = (myX, myY) => {
+    const evaluateF = (myX, myY) => {
         const code = `
         (function(MyX, MyY, GoalX, GoalY) {
             return ${strategy};
@@ -211,16 +241,33 @@ function makeStep() {
         `
         return eval(code).toFixed(3);
     }
+    const evaluateA = (myX, myY) => {
+        const code = `
+        (function(MyX, MyY, GoalX, GoalY) {
+            const Up = 'Down';
+            const Down = 'Up';
+            const Left = 'Left';
+            const Right = 'Right';
+            return ${strategy};
+        })(${myX}, ${myY}, ${targetPosition.x}, ${targetPosition.y})
+        `
+        return eval(code);
+    }
 
     const myX = agentPosition.x;
     const myY = agentPosition.y;
 
-    printUl(document.getElementById("test-agent-result"), {
-        UP: evaluate(myX, myY + 1),
-        DOWN: evaluate(myX, myY - 1),
-        LEFT: evaluate(myX - 1, myY),
-        RIGHT: evaluate(myX + 1, myY)
-    });
+    const resultEl = document.getElementById("test-agent-result");
+    if (currentAgent.type === "float") {
+        printUl(resultEl, {
+            UP: evaluateF(myX, myY + 1),
+            DOWN: evaluateF(myX, myY - 1),
+            LEFT: evaluateF(myX - 1, myY),
+            RIGHT: evaluateF(myX + 1, myY)
+        });
+    } else if (currentAgent.type === "action") {
+        resultEl.innerText = evaluateA(myX, myY);
+    }
 
     setTimeout(makeStep, +simulationDelay.value)
 }
@@ -236,10 +283,6 @@ function resetSimulationScreen() {
 
 function run() {
     isRunning = true;
-    agentPosition = {
-        x: Math.ceil(Math.random() * 500),
-        y: Math.ceil(Math.random() * 500),
-    };
     loadAgent();
     resetSimulationScreen();
     runSimulation().then(result => {
@@ -275,9 +318,15 @@ function refresh() {
 
 function initApp() {
     generationsInfo = document.getElementById('info-generations');
+    statusInfo = document.getElementById('info-status');
     bestInfo = document.getElementById('info-best');
     allInfo = document.getElementById('info-all');
     simulationDelay = document.getElementById('simulation-delay');
+
+    sizeParam = document.getElementById("sizeParam")
+    elitesSizeParam = document.getElementById("elitesSizeParam")
+    childrenSizeParam = document.getElementById("childrenSizeParam")
+    mutationChanceParam = document.getElementById("mutationChanceParam")
 
     stateMyX = document.getElementById('state-myx');
     stateMyY = document.getElementById('state-myy');
@@ -296,17 +345,110 @@ function initApp() {
         const rect = e.target.getBoundingClientRect();
         const x = scale(e.clientX - rect.left); //x position within the element.
         const y = scale(e.clientY - rect.top);  //y position within the element.
+        if (e.altKey) {
+            moveAgent(x, y)
+        } else {
+            moveTarget(x, y)
+        }
         resetSimulationScreen();
-        moveTarget(x, y)
     });
 
     document.getElementById("run").addEventListener("click", run);
 
+    const changeParams = document.getElementById("change-params");
+    const applyParams = document.getElementById("apply-params");
+    const cancelParams = document.getElementById("cancel-params");
+
+    changeParams.addEventListener("click", () => {
+        editingParams = true;
+        enable(sizeParam, elitesSizeParam, childrenSizeParam, mutationChanceParam);
+        hide(changeParams);
+        show(applyParams, cancelParams);
+    });
+
+    cancelParams.addEventListener('click', () => {
+        editingParams = false;
+        disable(sizeParam, elitesSizeParam, childrenSizeParam, mutationChanceParam);
+        show(changeParams);
+        hide(applyParams, cancelParams);
+        updateInfo();
+    });
+
+    applyParams.addEventListener('click', () => {
+        // first, some basic validation
+        const size = +sizeParam.value;
+        const mutationChance = +mutationChanceParam.value;
+        const childrenSize = +childrenSizeParam.value;
+        const elitesSize = +elitesSizeParam.value;
+
+        if (size < 5 || size > 100) {
+            return alert("Size should be in range [5, 100]");
+        }
+        if (childrenSize < 0 || childrenSize > 100) {
+            return alert("Children should be in range [0, 100]");
+        }
+        if (elitesSize < 0 || elitesSize > 10) {
+            return alert("Elites should be in range [0, 10]");
+        }
+        if (mutationChance < 0 || mutationChance > 1) {
+            return alert("Mutation chance should be in range [0, 1]");
+        }
+        disable(sizeParam, elitesSizeParam, childrenSizeParam, mutationChanceParam);
+
+        fetch('/evolve', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: 'follow', // manual, *follow, error
+            body: JSON.stringify({
+                size, mutationChance, childrenSize, elitesSize
+            })
+        }).then(resp => resp.json())
+            .then(result => {
+                lastStatus = result
+                show(changeParams);
+                hide(applyParams, cancelParams);
+                updateInfo();
+            })
+            .catch(error => {
+                alert("Request failed")
+                console.error("Failed to restart server: ", error);
+                enable(sizeParam, elitesSizeParam, childrenSizeParam, mutationChanceParam);
+            })
+
+    });
+
     refresh().then(() => {
         document.getElementById('loader').remove();
-        const content = document.getElementById('app');
-        content.classList.remove('hidden')
+        show(document.getElementById('app'));
     });
+}
+
+function hide(el) {
+    for (let i = 0; i < arguments.length; i++) {
+        arguments[i].classList.add('hidden')
+    }
+}
+
+function show() {
+    for (let i = 0; i < arguments.length; i++) {
+        arguments[i].classList.remove('hidden')
+    }
+}
+
+
+function enable() {
+    for (let i = 0; i < arguments.length; i++) {
+        arguments[i].removeAttribute('disabled');
+    }
+}
+function disable() {
+    for (let i = 0; i < arguments.length; i++) {
+        arguments[i].setAttribute('disabled', 'disabled');
+    }
 }
 
 

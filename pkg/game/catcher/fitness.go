@@ -56,19 +56,6 @@ func NewFitness() evolution.Fitness {
 }
 
 func simulateGame(agent *tree.Node, state *State) Result {
-	game := NewGame(state, buildPlayer(agent))
+	game := NewGame(state, NewPlayer(agent))
 	return game.Run(200)
-}
-
-func buildPlayer(agent *tree.Node) Player {
-	return NewAiFPlayer(agent)
-	//
-	//switch agent.Type {
-	//case tree.Float:
-	//	return NewAiFPlayer(agent)
-	//case tree.Action:
-	//	return NewAiAPlayer(agent)
-	//}
-
-	//panic("Unknown type of agent: " + agent.Type)
 }

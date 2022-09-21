@@ -91,10 +91,6 @@ func isAlwaysFalse(cond *tree.Node) bool {
 	return false
 }
 
-func NewAiFPlayer(strategy *tree.Node) *AiFPlayer {
-	return &AiFPlayer{strategy: strategy}
-}
-
 type AiAPlayer struct {
 	strategy *tree.Node
 }
@@ -103,6 +99,13 @@ func (ai *AiAPlayer) GetAction(state *State) actions.Action {
 	return tree.Resolve(ai.strategy, state.BuildArgs()).(actions.Action)
 }
 
-func NewAiAPlayer(strategy *tree.Node) *AiAPlayer {
-	return &AiAPlayer{strategy: strategy}
+func NewPlayer(strategy *tree.Node) Player {
+	switch strategy.Type {
+	case tree.Float:
+		return &AiFPlayer{strategy: strategy}
+	case tree.Action:
+		return &AiAPlayer{strategy: strategy}
+	}
+
+	panic("Unknown type of strategy: " + strategy.Type)
 }

@@ -58,12 +58,19 @@ type Options struct {
 	MutationChance float64
 }
 
+type StatRow struct {
+	Min    float64
+	Max    float64
+	Median float64
+}
+
 type Population struct {
 	size              int
 	generator         tree.Generator
 	fitness           Fitness
 	genes             []*Gene
 	elites            []*Gene
+	statsLog          []*StatRow
 	mutationChance    float64
 	currentGeneration int
 	isFinished        bool
@@ -71,6 +78,7 @@ type Population struct {
 	eliteSize         int
 	isStopping        bool
 	waitingToStop     chan interface{}
+	params            Params
 }
 
 func (p *Population) Genes() []*Gene {
@@ -133,6 +141,8 @@ func (p *Population) Evolve(terminate func(population *Population) bool) {
 			return
 		}
 	}
+
+	p.isFinished = true
 }
 
 func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
@@ -201,6 +211,10 @@ func (p *Population) Stop(wait chan interface{}) {
 		}
 		wait <- true
 	}()
+}
+
+func (p *Population) Params() Params {
+	return p.params
 }
 
 func findBestBy(genes []*Gene, condition func(current, next *Gene) bool) *Gene {
@@ -336,18 +350,18 @@ var perfectAgentY = tree.NewIf(
 var PerfectAgent = tree.NewFunction(tree.Plus, tree.Float, []*tree.Node{perfectAgentX, perfectAgentY})
 
 type Params struct {
-	Size           int
-	ElitesSize     int
-	ChildrenSize   int
-	Generator      tree.Generator
-	Fitness        Fitness
-	MutationChance float64
+	Size           int            `json:"size,omitempty"`
+	ElitesSize     int            `json:"elitesSize,omitempty"`
+	ChildrenSize   int            `json:"childrenSize,omitempty"`
+	Generator      tree.Generator `json:"-"`
+	Fitness        Fitness        `json:"-"`
+	MutationChance float64        `json:"mutationChance,omitempty"`
 }
 
 func buildInitialGenes(size int, generator tree.Generator) []*Gene {
 	genes := make([]*Gene, 0)
 	for i := 0; i < size; i += 1 {
-		agent := generator.FTree(4)
+		agent := generator.ATree(4)
 		genes = append(genes, &Gene{
 			Agent:       agent,
 			Born:        0,
@@ -371,6 +385,7 @@ func NewPopulation(params *Params) *Population {
 		mutationChance:    params.MutationChance,
 		currentGeneration: 0,
 		isFinished:        false,
+		params:            *params,
 	}
 }
 

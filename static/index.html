@@ -13,8 +13,19 @@
 </div>
 <div id="app" class="hidden">
     <div class="info">
+        <h3>Settings:</h3>
+        <ul class="settings">
+            <li><label><span>Size</span> <input disabled type="number" min="4" max="100" id="sizeParam"></label></li>
+            <li><label><span>Children:</span> <input disabled type="number" min="0" id="childrenSizeParam"></label></li>
+            <li><label><span>Elites:</span> <input disabled type="number" min="0" id="elitesSizeParam"></label></li>
+            <li><label><span>Mutation chance:</span> <input disabled type="number" min="0" max="1" id="mutationChanceParam"></label></li>
+        </ul>
+        <button type="button" id="change-params">Change</button>
+        <button class="hidden" type="button" id="apply-params">Apply</button>
+        <button class="hidden" type="button" id="cancel-params">Cancel</button>
         <h3>Stats:</h3>
         <ul>
+            <li id="info-status"></li>
             <li id="info-generations"></li>
             <li id="info-best"></li>
             <li id="info-all"></li>
@@ -32,11 +43,16 @@
             <li><b>GoalY:</b> <span id="state-goaly">n/a</span></li>
         </ul>
 
-        <h3>Action weights:</h3>
+        <h3>Strategy output:</h3>
         <div id="test-agent-result">n/a</div>
     </div>
     <div class="simulator">
         <canvas id="renderer" width="600" height="600"></canvas>
+        <div>
+            <b>Left click</b> - move goal
+            <br/>
+            <b>Alt + left click</b> - move agent
+        </div>
         <hr/>
         <form id="simulation-params">
             <fieldset>
@@ -45,8 +61,6 @@
                     <b>Delay:</b>
                     <input type="number" name="index" value="50" min="0" max="5000" id="simulation-delay"/>
                 </label>
-                <br/>
-                <br/>
                 <label><input name="mode" value="best" checked type="radio">Best</label>
 <!--                <label><input name="mode" value="elite" type="radio">Elite</label>-->
                 <label><input name="mode" value="index" type="radio">By index</label>

@@ -78,23 +78,7 @@ func (g *BasicGenerator) Tree(nodeType NodeType, depth int) *Node {
 }
 
 func (g *BasicGenerator) Grow(node *Node) {
-	switch node.Key {
-	case IF:
-		update(node, NewIf(g.BFunc(), g.FFunc(), g.FFunc()))
-	case Plus:
-		fallthrough
-	case Minus:
-		fallthrough
-	case Multiply:
-		fallthrough
-	case Divide:
-		fallthrough
-	case Eq:
-		fallthrough
-	case Gt:
-		fallthrough
-	case Lt:
-		node.Children = []*Node{g.FFunc(), g.FFunc()}
+	if isFunc(node) {
 		return
 	}
 
@@ -102,10 +86,17 @@ func (g *BasicGenerator) Grow(node *Node) {
 	case Float:
 		update(node, g.FFunc())
 		return
+	case Action:
+		update(node, g.AFunc())
+		return
 	case Boolean:
 		update(node, g.BFunc())
 		return
 	}
+}
+
+func isFunc(node *Node) bool {
+	return node.Children != nil
 }
 
 func (g *BasicGenerator) Truncate(node *Node) {
@@ -204,8 +195,10 @@ func growTree(root *Node, g Generator, maxDepth int) {
 }
 
 func (g *BasicGenerator) ATree(depth int) *Node {
-	//TODO implement me
-	panic("implement me")
+	root := g.AFunc()
+	growTree(root, g, depth)
+
+	return root
 }
 
 func (g *BasicGenerator) BTree(depth int) *Node {

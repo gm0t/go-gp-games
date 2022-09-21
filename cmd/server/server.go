@@ -20,10 +20,10 @@ type SimulateRequest struct {
 }
 
 type EvolveRequest struct {
-	PopulationSize     int     `json:"populationSize"`
-	ElitesSize         int     `json:"elitesSize"`
-	MutationChance     float64 `json:"mutationChance"`
-	NumberOfCrossovers int     `json:"numberOfCrossovers"`
+	Size           int     `json:"size"`
+	ElitesSize     int     `json:"elitesSize"`
+	MutationChance float64 `json:"mutationChance"`
+	ChildrenSize   int     `json:"numberOfCrossovers"`
 }
 
 func main() {
@@ -53,6 +53,7 @@ func main() {
 			"genes":      population.Genes(),
 			"elites":     population.Elites(),
 			"best":       population.Best(),
+			"settings":   population.Params(),
 		})
 	})
 
@@ -60,18 +61,23 @@ func main() {
 		request := &EvolveRequest{}
 		c.BindJSON(request)
 
-		if request.PopulationSize < 6 {
-			c.String(http.StatusBadRequest, "PopulationSize is too low")
+		if request.Size < 6 {
+			c.String(http.StatusBadRequest, "Size is too low")
 			return
 		}
 
-		if request.ElitesSize < 0 || request.ElitesSize > request.PopulationSize {
+		if request.Size > 100 {
+			c.String(http.StatusBadRequest, "Size is too big")
+			return
+		}
+
+		if request.ElitesSize < 0 || request.ElitesSize > 10 {
 			c.String(http.StatusBadRequest, "ElitesSize is wrong")
 			return
 		}
 
-		if request.NumberOfCrossovers < 0 || request.NumberOfCrossovers > request.PopulationSize {
-			c.String(http.StatusBadRequest, "NumberOfCrossovers is wrong [0, %d]", request.PopulationSize)
+		if request.ChildrenSize < 0 || request.ChildrenSize > 100 {
+			c.String(http.StatusBadRequest, "ChildrenSize is wrong [0, %d]", 100)
 			return
 		}
 
@@ -85,15 +91,23 @@ func main() {
 		<-wait
 
 		population = evolution.NewPopulation(&evolution.Params{
-			Size:           request.PopulationSize,
+			Size:           request.Size,
 			ElitesSize:     request.ElitesSize,
-			ChildrenSize:   request.NumberOfCrossovers,
+			ChildrenSize:   request.ChildrenSize,
 			Generator:      generator,
 			Fitness:        catcher.NewFitness(),
 			MutationChance: request.MutationChance,
 		})
 
 		go population.Evolve(catcher.NewTerminationCondition())
+		c.JSON(http.StatusOK, gin.H{
+			"generation": population.CurrentGeneration(),
+			"finished":   population.IsFinished(),
+			"genes":      population.Genes(),
+			"elites":     population.Elites(),
+			"best":       population.Best(),
+			"settings":   population.Params(),
+		})
 	})
 
 	router.POST("/catcher", func(c *gin.Context) {
@@ -107,7 +121,7 @@ func main() {
 				request.TargetX,
 				request.TargetY,
 			),
-			catcher.NewAiFPlayer(&request.Agent),
+			catcher.NewPlayer(&request.Agent),
 		)
 
 		normalized := catcher.Normalize(&request.Agent)
