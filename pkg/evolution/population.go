@@ -1,6 +1,7 @@
 package evolution
 
 import (
+	"math"
 	"math/rand"
 	"sort"
 
@@ -59,9 +60,10 @@ type Options struct {
 }
 
 type StatRow struct {
-	Min    float64
-	Max    float64
-	Median float64
+	Min     float64 `json:"min"`
+	Max     float64 `json:"max"`
+	Median  float64 `json:"median"`
+	Average float64 `json:"average"`
 }
 
 type Population struct {
@@ -136,6 +138,7 @@ func (p *Population) Evolve(terminate func(population *Population) bool) {
 		}
 
 		p.currentGeneration += 1
+		p.statsLog = append(p.statsLog, buildStatsFor(p.genes))
 		if p.isStopping {
 			p.isFinished = true
 			return
@@ -143,6 +146,31 @@ func (p *Population) Evolve(terminate func(population *Population) bool) {
 	}
 
 	p.isFinished = true
+}
+
+func buildStatsFor(genes []*Gene) *StatRow {
+	min := math.Inf(+1)
+	max := math.Inf(-1)
+	average := float64(0)
+
+	for _, g := range genes {
+		average += g.Fitness
+		if g.Fitness > max {
+			max = g.Fitness
+		}
+		if g.Fitness < min {
+			min = g.Fitness
+		}
+	}
+	sort.Sort(ByFitness(genes))
+	median := genes[len(genes)/2].Fitness
+
+	return &StatRow{
+		Min:     min,
+		Max:     max,
+		Median:  median,
+		Average: average / float64(len(genes)),
+	}
 }
 
 func truncate(genes []*Gene, generator tree.Generator, maxDepth int) {
@@ -215,6 +243,10 @@ func (p *Population) Stop(wait chan interface{}) {
 
 func (p *Population) Params() Params {
 	return p.params
+}
+
+func (p *Population) Stats() []*StatRow {
+	return p.statsLog
 }
 
 func findBestBy(genes []*Gene, condition func(current, next *Gene) bool) *Gene {
@@ -350,12 +382,12 @@ var perfectAgentY = tree.NewIf(
 var PerfectAgent = tree.NewFunction(tree.Plus, tree.Float, []*tree.Node{perfectAgentX, perfectAgentY})
 
 type Params struct {
-	Size           int            `json:"size,omitempty"`
-	ElitesSize     int            `json:"elitesSize,omitempty"`
-	ChildrenSize   int            `json:"childrenSize,omitempty"`
+	Size           int            `json:"size"`
+	ElitesSize     int            `json:"elitesSize"`
+	ChildrenSize   int            `json:"childrenSize"`
 	Generator      tree.Generator `json:"-"`
 	Fitness        Fitness        `json:"-"`
-	MutationChance float64        `json:"mutationChance,omitempty"`
+	MutationChance float64        `json:"mutationChance"`
 }
 
 func buildInitialGenes(size int, generator tree.Generator) []*Gene {

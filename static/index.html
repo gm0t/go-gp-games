@@ -13,68 +13,93 @@
 </div>
 <div id="app" class="hidden">
     <div class="info">
-        <h3>Settings:</h3>
-        <ul class="settings">
-            <li><label><span>Size</span> <input disabled type="number" min="4" max="100" id="sizeParam"></label></li>
-            <li><label><span>Children:</span> <input disabled type="number" min="0" id="childrenSizeParam"></label></li>
-            <li><label><span>Elites:</span> <input disabled type="number" min="0" id="elitesSizeParam"></label></li>
-            <li><label><span>Mutation chance:</span> <input disabled type="number" min="0" max="1" id="mutationChanceParam"></label></li>
-        </ul>
-        <button type="button" id="change-params">Change</button>
-        <button class="hidden" type="button" id="apply-params">Apply</button>
-        <button class="hidden" type="button" id="cancel-params">Cancel</button>
-        <h3>Stats:</h3>
-        <ul>
-            <li id="info-status"></li>
-            <li id="info-generations"></li>
-            <li id="info-best"></li>
-            <li id="info-all"></li>
-        </ul>
-        <h3>Loaded agent:</h3>
-        <h4>Optimised:</h4>
-        <textarea  readonly id="agent-func-optimised"></textarea>
-        <h4>Original:</h4>
-        <textarea  readonly id="agent-func-original"></textarea>
-        <h3>Current state:</h3>
-        <ul>
-            <li><b>MyX:</b> <span id="state-myx">n/a</span></li>
-            <li><b>MyY:</b> <span id="state-myy">n/a</span></li>
-            <li><b>GoalX:</b> <span id="state-goalx">n/a</span></li>
-            <li><b>GoalY:</b> <span id="state-goaly">n/a</span></li>
-        </ul>
-
-        <h3>Strategy output:</h3>
-        <div id="test-agent-result">n/a</div>
-    </div>
-    <div class="simulator">
-        <canvas id="renderer" width="600" height="600"></canvas>
-        <div>
-            <b>Left click</b> - move goal
-            <br/>
-            <b>Alt + left click</b> - move agent
+        <div class="col">
+            <h3>Settings:</h3>
+            <ul class="settings">
+                <li><label><span>Size</span> <input disabled type="number" min="4" max="100" id="sizeParam"></label>
+                </li>
+                <li><label><span>Children:</span> <input disabled type="number" min="0" id="childrenSizeParam"></label>
+                </li>
+                <li><label><span>Elites:</span> <input disabled type="number" min="0" id="elitesSizeParam"></label></li>
+                <li><label><span>Mutation chance:</span> <input disabled type="number" min="0" max="1"
+                                                                id="mutationChanceParam"></label></li>
+            </ul>
+            <button type="button" id="change-params">Change</button>
+            <button class="hidden" type="button" id="apply-params">Apply</button>
+            <button class="hidden" type="button" id="cancel-params">Cancel</button>
         </div>
-        <hr/>
-        <form id="simulation-params">
-            <fieldset>
-                <legend>Simulation</legend>
-                <label>
-                    <b>Delay:</b>
-                    <input type="number" name="index" value="50" min="0" max="5000" id="simulation-delay"/>
-                </label>
-                <label><input name="mode" value="best" checked type="radio">Best</label>
-<!--                <label><input name="mode" value="elite" type="radio">Elite</label>-->
-                <label><input name="mode" value="index" type="radio">By index</label>
+        <div class="col">
+            <h3>Status:</h3>
+            <ul>
+                <li id="info-status"></li>
+                <li id="info-generations"></li>
+            </ul>
+        </div>
+        <div class="col">
+            <h3>Agents:</h3>
+            <ul id="info-all"></ul>
+        </div>
+        <div class="col">
+            <h3>Best:</h3>
+            <ul id="info-best"></ul>
+        </div>
+    </div>
+    <hr />
+    <div>
+        <div class="content-switcher">
+            <button id="show-stats" type="button">Stats</button>
+            <button id="show-simulator" type="button">Simulator</button>
+        </div>
+        <canvas id="info-stats" class="" width="800" height="500"></canvas>
+        <div id="simulator" class="simulator hidden">
+            <div class="simulator-output">
+                <canvas id="renderer" width="600" height="600"></canvas>
+                <div>
+                    <b>Left click</b> - move goal
+                    <br/>
+                    <b>Alt + left click</b> - move agent
+                </div>
+            </div>
 
-                <label>
-                    <input type="number" name="index" value="0" min="0" max="50" id="agent-index"/>
-                </label>
-                <br/>
-                <br/>
-                <button id="run" type="button">
-                    Load
-                </button>
-            </fieldset>
-        </form>
+            <div class="simulator-info">
+                <form id="simulation-params">
+                    <fieldset>
+                        <legend>Simulation</legend>
+                        <label>
+                            <b>Delay:</b>
+                            <input type="number" name="index" value="50" min="0" max="5000" id="simulation-delay"/>
+                        </label>
+                        <label><input name="mode" value="best" checked type="radio">Best</label>
+                        <!--                <label><input name="mode" value="elite" type="radio">Elite</label>-->
+                        <label><input name="mode" value="index" type="radio">By index</label>
+
+                        <label>
+                            <input type="number" name="index" value="0" min="0" max="50" id="agent-index"/>
+                        </label>
+                        <br/>
+                        <br/>
+                        <button id="run" type="button">
+                            Load
+                        </button>
+                    </fieldset>
+                </form>
+                <h3>Loaded agent:</h3>
+                <h4>Optimised:</h4>
+                <textarea readonly id="agent-func-optimised"></textarea>
+                <h4>Original:</h4>
+                <textarea readonly id="agent-func-original"></textarea>
+                <h3>Current state:</h3>
+                <ul>
+                    <li><b>MyX:</b> <span id="state-myx">n/a</span></li>
+                    <li><b>MyY:</b> <span id="state-myy">n/a</span></li>
+                    <li><b>GoalX:</b> <span id="state-goalx">n/a</span></li>
+                    <li><b>GoalY:</b> <span id="state-goaly">n/a</span></li>
+                </ul>
+
+                <h3>Strategy output:</h3>
+                <div id="test-agent-result">n/a</div>
+            </div>
+        </div>
     </div>
 </div>
 
