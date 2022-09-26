@@ -37,6 +37,11 @@ let stateGoalY;
 let simulatorCanvas;
 
 /**
+ * @type HTMLCanvasElement
+ */
+let statsCanvas;
+
+/**
  * @type HTMLFormElement
  */
 let simulationParams;
@@ -115,20 +120,92 @@ function updateInfo() {
     avgFitness = avgFitness / genes.length;
 
     bestInfo.innerHTML = `
-        <b>Best agent:</b>
-        <ul>
-            <li>Score: ${best.fitness.toFixed(3)}</li>
-            <li>Survived: ${best.generations}</li>
-        </ul>
+        <li><b>Score:</b> ${best.fitness.toFixed(3)}</li>
+        <li><b>Survived:</b> ${best.generations}</li>
     `;
     allInfo.innerHTML = `
-        <b>Agents:</b>
-        <ul>
-            <li>Total: ${genes.length}</li>
-            <li>Worst: ${minFitness.toFixed(3)}</li>
-            <li>Average: ${avgFitness.toFixed(3)}</li>
-        </ul>
+        <li><b>Total:</b> ${genes.length}</li>
+        <li><b>Worst:</b> ${minFitness.toFixed(3)}</li>
+        <li><b>Average:</b> ${avgFitness.toFixed(3)}</li>
     `
+    // stats chart
+    const ctx = statsCanvas.getContext('2d')
+    const height = statsCanvas.height;
+    const width = statsCanvas.width;
+
+    console.log(">>>>>", width, height);
+    const paddingBottom = 10;
+    const paddingLeft = 20;
+    const lineWidth = 1;
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = "#333";
+    ctx.fillRect(paddingLeft, height - paddingBottom, width - paddingLeft, lineWidth);
+    ctx.fillRect(paddingLeft, paddingBottom, lineWidth, height - paddingBottom * 2);
+
+    const yValue = (value) => {
+        return height - paddingBottom - value * 200
+    }
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(paddingLeft, yValue(0.5), width - paddingBottom * 2, lineWidth);
+    ctx.fillText("0.5", 0, yValue(0.5));
+    ctx.fillStyle = "green";
+    ctx.fillRect(paddingLeft, yValue(1), width - paddingBottom * 2, lineWidth);
+    ctx.fillText("1.0", 0, yValue(1));
+
+    ctx.beginPath();
+    ctx.strokeStyle = "red";
+    ctx.moveTo(paddingLeft, height - paddingBottom);
+
+    adjustStatsResolution(lastStatus.stats || [], width - paddingLeft - lineWidth)
+        .forEach((point, i) => {
+            // ctx.fillStyle = "#333";
+            // ctx.fillRect(i + padding + lineWidth, yValue(point.min), 1, 1);
+            // ctx.fillStyle = "#999";
+            // ctx.fillRect(i + padding + lineWidth, yValue(point.max), 1, 1);
+            // ctx.fillRect(i + padding + lineWidth, yValue(point.min), 1, 1);
+            ctx.lineTo(i + paddingLeft + lineWidth, yValue(point.average));
+            if (i % 50 === 0) {
+                ctx.fillStyle = "#999";
+                ctx.fillRect(i + paddingLeft + lineWidth, 0, lineWidth, height - paddingBottom);
+                ctx.fillStyle = "#333";
+                ctx.fillText(point.i, i + paddingLeft + lineWidth, height - 1);
+            }
+        });
+    ctx.stroke();
+}
+
+function adjustStatsResolution(allPoints, maxPoints) {
+    let indexedPoints = allPoints.map((data, i) => ({...data, i}));
+    if (allPoints.length < maxPoints) {
+        return indexedPoints;
+    }
+
+    const chunks = [];
+    let smallestChunk = Math.ceil(maxPoints / 3);
+    while (indexedPoints.length > smallestChunk) {
+        chunks.push(indexedPoints.splice(Math.ceil(indexedPoints.length / 2)));
+    }
+    chunks.push(indexedPoints);
+    chunks.reverse();
+
+    const finalChunkSize = Math.ceil(maxPoints / chunks.length);
+    return chunks.flatMap(chunk => {
+        const skip = chunk.length / finalChunkSize;
+        if (skip < 1.8) {
+            return chunk.slice(0, finalChunkSize);
+        }
+
+        const step = Math.ceil(skip);
+        const picked = [];
+        for (let i = 0; i < chunk.length; i += step) {
+            picked.push(chunk[i]);
+        }
+        return picked;
+    });
 }
 
 function drawMarker(x, y, size, color) {
@@ -333,6 +410,18 @@ function initApp() {
     stateGoalX = document.getElementById('state-goalx');
     stateGoalY = document.getElementById('state-goaly');
 
+    statsCanvas = document.getElementById('info-stats');
+
+    document.getElementById("show-simulator").addEventListener("click", () => {
+        hide(document.getElementById("info-stats"))
+        show(document.getElementById("simulator"))
+    })
+    document.getElementById("show-stats").addEventListener("click", () => {
+        hide(document.getElementById("simulator"))
+        show(document.getElementById("info-stats"))
+    })
+
+
     simulatorCanvas = document.getElementById('renderer');
     simulationParams = document.getElementById('simulation-params');
     simulationParams.addEventListener('change', () => {
@@ -445,6 +534,7 @@ function enable() {
         arguments[i].removeAttribute('disabled');
     }
 }
+
 function disable() {
     for (let i = 0; i < arguments.length; i++) {
         arguments[i].setAttribute('disabled', 'disabled');

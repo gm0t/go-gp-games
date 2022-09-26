@@ -10,21 +10,54 @@ import (
 	"lr1Go/pkg/tree"
 )
 
-func buildTestStates(count int) []*State {
-	states := make([]*State, count)
-	for i := 0; i < count; i += 1 {
-		states[i] = NewState(
-			float64(rand.Intn(40)),
-			float64(rand.Intn(40)),
-			float64(rand.Intn(40)),
-			float64(rand.Intn(40)),
-		)
+func buildTestStates() []*State {
+	states := make([]*State, 0)
+	states = append(states, NewState(
+		0, 0,
+		10, 10,
+	))
+	states = append(states, NewState(
+		10, 10,
+		0, 0,
+	))
+	states = append(states, NewState(
+		5, 5,
+		5, 10,
+	))
+	states = append(states, NewState(
+		5, 5,
+		10, 5,
+	))
+	states = append(states, NewState(
+		5, 10,
+		5, 5,
+	))
+	states = append(states, NewState(
+		10, 5,
+		5, 5,
+	))
+	states = append(states, NewState(
+		10, 10,
+		5, 5,
+	))
+	states = append(states, NewState(
+		5, 5,
+		10, 10,
+	))
+
+	for i := 0; i < 3; i += 1 {
+		states = append(states, NewState(
+			float64(rand.Intn(20)),
+			float64(rand.Intn(20)),
+			float64(rand.Intn(20)),
+			float64(rand.Intn(20)),
+		))
 	}
 	return states
 }
 
 func NewFitness() evolution.Fitness {
-	states := buildTestStates(5)
+	states := buildTestStates()
 	lastGen := 0
 	lock := sync.Mutex{}
 	//var lastWinner *tree.Node
@@ -32,7 +65,7 @@ func NewFitness() evolution.Fitness {
 		lock.Lock()
 		if lastGen != generation {
 			lastGen = generation
-			states = buildTestStates(5)
+			states = buildTestStates()
 		}
 
 		accumulatedResult := float64(0)

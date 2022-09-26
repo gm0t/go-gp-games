@@ -54,6 +54,7 @@ func main() {
 			"elites":     population.Elites(),
 			"best":       population.Best(),
 			"settings":   population.Params(),
+			"stats":      population.Stats(),
 		})
 	})
 
@@ -107,6 +108,7 @@ func main() {
 			"elites":     population.Elites(),
 			"best":       population.Best(),
 			"settings":   population.Params(),
+			"stats":      population.Stats(),
 		})
 	})
 
