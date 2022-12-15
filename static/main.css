@@ -86,9 +86,35 @@ h1 {
     flex-grow: 1;
 }
 
-#info-stats {
+#stats-chart {
     margin: 0 auto;
     display: block;
+}
+
+.chart-legend {
+    text-align: center;
+    padding-top: 20px;
+}
+.lozenge {
+    display: inline-block;
+    padding: 5px 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
+.lozenge-orange {
+    border-color: orange;
+    color: orange;
+}
+
+.lozenge-red {
+    border-color: red;
+    color: red;
+}
+
+.lozenge-green {
+    border-color: green;
+    color: green;
 }
 
 .content-switcher {

@@ -145,6 +145,7 @@ function updateInfo() {
     ctx.fillRect(paddingLeft, height - paddingBottom, width - paddingLeft, lineWidth);
     ctx.fillRect(paddingLeft, paddingBottom, lineWidth, height - paddingBottom * 2);
 
+
     const yValue = (value) => {
         return height - paddingBottom - value * 200
     }
@@ -156,36 +157,56 @@ function updateInfo() {
     ctx.fillRect(paddingLeft, yValue(1), width - paddingBottom * 2, lineWidth);
     ctx.fillText("1.0", 0, yValue(1));
 
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.moveTo(paddingLeft, height - paddingBottom);
+    const allPoints = lastStatus.stats;
+    const maxPoints = width - paddingLeft - lineWidth;
+    const adjustedPoints = adjustStatsResolution(allPoints || [], maxPoints);
 
-    adjustStatsResolution(lastStatus.stats || [], width - paddingLeft - lineWidth)
-        .forEach((point, i) => {
-            // ctx.fillStyle = "#333";
-            // ctx.fillRect(i + padding + lineWidth, yValue(point.min), 1, 1);
-            // ctx.fillStyle = "#999";
-            // ctx.fillRect(i + padding + lineWidth, yValue(point.max), 1, 1);
-            // ctx.fillRect(i + padding + lineWidth, yValue(point.min), 1, 1);
-            ctx.lineTo(i + paddingLeft + lineWidth, yValue(point.average));
-            if (i % 50 === 0) {
-                ctx.fillStyle = "#999";
-                ctx.fillRect(i + paddingLeft + lineWidth, 0, lineWidth, height - paddingBottom);
-                ctx.fillStyle = "#333";
-                ctx.fillText(point.i, i + paddingLeft + lineWidth, height - 1);
-            }
+    const xValue = (value) => {
+        if (allPoints.length < maxPoints) {
+            return value * Math.floor(maxPoints / allPoints.length);
+        }
+        return value
+    }
+
+    const renderLine = (value, color) => {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.moveTo(paddingLeft, height - paddingBottom);
+        adjustedPoints.forEach((point, i) => {
+            const x = xValue(i, allPoints, maxPoints) + paddingLeft + lineWidth;
+            ctx.lineTo(x, yValue(value(point)));
         });
-    ctx.stroke();
+        ctx.stroke();
+    }
+
+    renderLine((point) => point.median, "orange");
+    renderLine((point) => point.max, "green");
+    renderLine((point) => point.min, "red");
+
+    console.log(allPoints.length, './.', adjustedPoints.length)
+
+    const step = Math.max(1, Math.ceil((allPoints.length / 100) * 5));
+    console.log(">>>step is: ", step, (allPoints.length / 100) * 5);
+    adjustedPoints.forEach((point, i) => {
+        if (i % step === 0 || i === adjustedPoints.length - 1) {
+            const x = xValue(i, allPoints, maxPoints) + paddingLeft + lineWidth;
+            ctx.fillStyle = "#999";
+            ctx.fillRect(x, 0, lineWidth, height - paddingBottom);
+            ctx.fillStyle = "#333";
+            ctx.fillText(point.i + 1, x, height - 1);
+        }
+    });
 }
 
 function adjustStatsResolution(allPoints, maxPoints) {
     let indexedPoints = allPoints.map((data, i) => ({...data, i}));
-    if (allPoints.length < maxPoints) {
+    console.log(">>>", allPoints.length, maxPoints / 10)
+    if (allPoints.length < maxPoints / 10) {
         return indexedPoints;
     }
 
     const chunks = [];
-    let smallestChunk = Math.ceil(maxPoints / 3);
+    let smallestChunk = Math.ceil(maxPoints / 10);
     while (indexedPoints.length > smallestChunk) {
         chunks.push(indexedPoints.splice(Math.ceil(indexedPoints.length / 2)));
     }
@@ -410,7 +431,7 @@ function initApp() {
     stateGoalX = document.getElementById('state-goalx');
     stateGoalY = document.getElementById('state-goaly');
 
-    statsCanvas = document.getElementById('info-stats');
+    statsCanvas = document.getElementById('stats-chart');
 
     document.getElementById("show-simulator").addEventListener("click", () => {
         hide(document.getElementById("info-stats"))

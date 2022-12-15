@@ -249,6 +249,16 @@ func (p *Population) Stats() []*StatRow {
 	return p.statsLog
 }
 
+func (p *Population) Top(cnt int) []*Gene {
+	allGenes := p.genes
+	sort.Sort(ByFitness(allGenes))
+	if cnt > len(allGenes) {
+		cnt = len(allGenes)
+	}
+
+	return allGenes[len(allGenes)-cnt:]
+}
+
 func findBestBy(genes []*Gene, condition func(current, next *Gene) bool) *Gene {
 	var current *Gene
 	for _, next := range genes {

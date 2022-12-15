@@ -50,7 +50,14 @@
             <button id="show-stats" type="button">Stats</button>
             <button id="show-simulator" type="button">Simulator</button>
         </div>
-        <canvas id="info-stats" class="" width="800" height="500"></canvas>
+        <div id="info-stats">
+            <canvas id="stats-chart" class="" width="800" height="500"></canvas>
+            <div class="chart-legend">
+                <span class="lozenge lozenge-red">minimum fitness</span>
+                <span class="lozenge lozenge-orange">average fitness</span>
+                <span class="lozenge lozenge-green">maximum fitness</span>
+            </div>
+        </div>
         <div id="simulator" class="simulator hidden">
             <div class="simulator-output">
                 <canvas id="renderer" width="600" height="600"></canvas>

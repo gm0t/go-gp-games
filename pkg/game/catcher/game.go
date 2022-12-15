@@ -13,6 +13,7 @@ type Result struct {
 	Iterations     int
 	DistanceToGoal float64
 	Actions        []string
+	State          *State
 }
 
 func (g *Game) Run(maxIterations int) Result {
@@ -32,6 +33,7 @@ func (g *Game) Run(maxIterations int) Result {
 	return Result{
 		Iterations:     i,
 		Actions:        actions,
+		State:          state.Clone(),
 		DistanceToGoal: distance,
 	}
 }

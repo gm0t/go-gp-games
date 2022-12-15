@@ -59,7 +59,7 @@ func resolveFloat(node *Node, args ResolveArguments) float64 {
 		return f
 	}
 
-	fmt.Println("NOT A FLAOT: ", value)
+	fmt.Println("NOT A FLOAT: ", value)
 	return 0
 }
 

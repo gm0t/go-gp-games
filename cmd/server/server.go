@@ -23,7 +23,7 @@ type EvolveRequest struct {
 	Size           int     `json:"size"`
 	ElitesSize     int     `json:"elitesSize"`
 	MutationChance float64 `json:"mutationChance"`
-	ChildrenSize   int     `json:"numberOfCrossovers"`
+	ChildrenSize   int     `json:"childrenSize"`
 }
 
 func main() {
@@ -38,10 +38,10 @@ func main() {
 	population := evolution.NewPopulation(&evolution.Params{
 		Size:           50,
 		ElitesSize:     5,
-		ChildrenSize:   20,
+		ChildrenSize:   0,
 		Generator:      generator,
 		Fitness:        catcher.NewFitness(),
-		MutationChance: 0.5,
+		MutationChance: 0.05,
 	})
 
 	go population.Evolve(catcher.NewTerminationCondition())
